@@ -27,6 +27,9 @@ These hold for every phase:
   default values are not enforced. Gson-persisted classes are converted only in Phase 6, with
   `@SerializedName` on every field.
 - **R8 keep rules** must cover every Gson-persisted class and everything reachable from it.
+  `Token` pins its JSON names with `@SerializedName`, but `MasterKey` and `EncryptedKey` are
+  stored under their raw Java field names (`mCipher`, `mSalt`, ...), so those names are part of
+  the backup format.
 - **Security behavior is preserved**: `FLAG_SECURE` on screens that show codes, the
   `UserNotAuthenticatedException` → confirm-device-credential flow, the
   `KeyPermanentlyInvalidatedException` handling, and unsafe-URI confirmation (`parseUnsafe`).
@@ -51,8 +54,10 @@ These hold for every phase:
 - [x] Resource IDs are no longer `final` under AGP 9: `switch` on `R.id` replaced by `if` chains
 - [x] `FreeOTPTheme` (Material 3) built from `colors.xml` with dark mode; the XML theme remains
       for the window. No dynamic (wallpaper) color, to keep the brand purple
-- [ ] Backup-format golden tests: fixed serialized `MasterKey`, `EncryptedKey`, `Token` JSON and
-      an exported prefs map, asserting they still deserialize, decrypt and produce known codes
+- [x] Backup-format golden tests (`BackupFormatGoldenTest`, fixtures in
+      `androidTest/assets/golden/`): a backup exported by the pre-migration code must still
+      deserialize, round-trip byte-for-byte through Gson, decrypt, restore and produce RFC codes.
+      Never regenerate the fixtures to make a failing test pass
 - [ ] Enable R8 for release (separate step) with Gson keep rules; verify the golden tests and a
       manual backup → restore round trip on a release build
 
