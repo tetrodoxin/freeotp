@@ -49,8 +49,8 @@ These hold for every phase:
 - [x] Remove legacy dependencies: `com.android.support.constraint`, `com.android.support.test`
       runner and espresso 3.0.2 (unused), `byte-buddy`, Jetifier; androidx test runner instead
 - [x] Resource IDs are no longer `final` under AGP 9: `switch` on `R.id` replaced by `if` chains
-- [ ] `FreeOTPTheme` (Material 3) built from `colors.xml` with dark mode; the XML theme remains
-      for the window
+- [x] `FreeOTPTheme` (Material 3) built from `colors.xml` with dark mode; the XML theme remains
+      for the window. No dynamic (wallpaper) color, to keep the brand purple
 - [ ] Backup-format golden tests: fixed serialized `MasterKey`, `EncryptedKey`, `Token` JSON and
       an exported prefs map, asserting they still deserialize, decrypt and produce known codes
 - [ ] Enable R8 for release (separate step) with Gson keep rules; verify the golden tests and a
