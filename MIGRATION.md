@@ -98,6 +98,7 @@ These hold for every phase:
       launcher and VIEW intent keep working
 - [ ] Remove layouts, view binding, `SelectableAdapter`, `GridLayoutItemDecoration`,
       `SquareFrameLayout`, `SystemBarInsets`, Picasso and unused Material Components resources
+- [ ] Replace the screenshots in `screenshots/` (used by README.md) with the Material 3 UI
 
 ### Phase 6 (optional): Core to Kotlin
 
