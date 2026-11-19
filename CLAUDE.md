@@ -59,7 +59,13 @@ The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Co
 
 ## Conventions
 
-- Commit messages follow `CONTRIBUTING.md`: a title under 50 characters, an optional body wrapped below 100 characters, and footer lines such as `Fixes #<n>`. Small PRs are squashed into one commit, and UI changes need screenshots on the PR.
+- Commit messages: a title under 50 characters, a blank line, then an optional body with lines under 100 characters, then optional footer lines (e.g. `Fixes #<n>`, one per issue). Squash small changes into one commit. UI changes should come with screenshots of the new or changed screens.
 - User-visible strings go in `res/values/strings.xml`. There are many translated `values-*` locales, and `generateLocaleConfig` is on. Toast-like messages go through `utils/UserNotifier`.
 - Edge-to-edge inset handling for targetSdk 35+ is centralized in `utils/SystemBarInsets`.
 - Store listing metadata lives in `fastlane/metadata/android`.
+
+## Ongoing migration to Kotlin + Compose
+
+The app is being migrated to Kotlin and Jetpack Compose (Material 3) in phases. `MIGRATION.md` holds the decisions, guardrails, phase checklist and status. Read it before touching UI code, and tick off items there as they land. Until the migration is done, parts of the descriptions above (view binding, `UserNotifier`, `SystemBarInsets`, RecyclerView `Adapter`) describe the old code. Two rules matter most:
+- Never change field names or types of the Gson-persisted classes (`Token`, `MasterKey`, `EncryptedKey`), and keep them in Java until the backup-format golden tests exist.
+- New UI code is Kotlin + Compose; don't add new XML layouts or Java UI classes.

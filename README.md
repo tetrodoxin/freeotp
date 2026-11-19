@@ -1,46 +1,46 @@
-[![Build Status](https://github.com/freeotp/freeotp-android/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/freeotp/freeotp-android/actions/workflows/build.yml)
-
 # FreeOTP
 
-[FreeOTP](https://freeotp.github.io) is a two-factor authentication application for systems
-utilizing one-time password protocols. Tokens can be added easily by scanning a QR code.
+FreeOTP is a two-factor authentication app for Android that generates one-time passwords. Tokens
+are added by scanning a QR code or entering them by hand.
 
-FreeOTP implements open standards:
+It implements the open standards:
 
 * HOTP (HMAC-Based One-Time Password Algorithm) [RFC 4226](https://www.ietf.org/rfc/rfc4226.txt)
 * TOTP (Time-Based One-Time Password Algorithm) [RFC 6238](https://www.ietf.org/rfc/rfc6238.txt)
 
-This means that no proprietary server-side component is necessary: use any server-side component that implements these standards.
+so it works with any server that implements them.
 
 ## Screenshots
-<img src="screenshots/1.png" alt="FreeOTP screenshot 1" width="200" /> &nbsp;<img src="screenshots/2.png" alt="FreeOTP screenshot 2" width="200" /> &nbsp;<img src="screenshots/3.png" alt="FreeOTP screenshot 3" width="200" /> &nbsp;<img src="screenshots/4.png" alt="FreeOTP screenshot 4" width="200" />
 
-## Download FreeOTP for Android
+<img src="screenshots/1.png" alt="Screenshot 1" width="200" /> &nbsp;<img src="screenshots/2.png" alt="Screenshot 2" width="200" /> &nbsp;<img src="screenshots/3.png" alt="Screenshot 3" width="200" /> &nbsp;<img src="screenshots/4.png" alt="Screenshot 4" width="200" />
 
-* [F-Droid](https://f-droid.org/packages/org.fedorahosted.freeotp)
-* [Google Play](https://play.google.com/store/apps/details?id=org.fedorahosted.freeotp)
+## Building
 
-<a href="https://f-droid.org/packages/org.fedorahosted.freeotp/" target="_blank">
-<img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="60"/></a>
-<a href="https://play.google.com/store/apps/details?id=org.fedorahosted.freeotp" target="_blank">
-<img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png" alt="Get it on Google Play" height="60"/></a>
+```sh
+./gradlew assembleDebug            # debug APK (applicationId with a ".debug" suffix)
+./gradlew build -x lint            # what CI runs
+./gradlew connectedAndroidTest     # instrumented tests, need an emulator or device
+```
 
-## Contributing
+Requires JDK 17.
 
-Pull requests on GitHub are welcome under the Apache 2.0 license, see [CONTRIBUTING](CONTRIBUTING.md) for more details.
+## Documentation
+
+* [URI.md](URI.md): the supported `otpauth://` token URI format
+* [BACKUP.md](BACKUP.md): how backup and restore work
+* [BRANDING.md](BRANDING.md): how token icons and colors are chosen, and how to add an issuer
+* [MIGRATION.md](MIGRATION.md): the ongoing migration to Kotlin and Jetpack Compose
 
 ## Permissions
 
-The FreeOTP app uses the following permissions
+| Permission | Usage | Required | Permission type |
+|------------|-------|----------|-----------------|
+| Camera | Scanning QR codes | No | Dangerous |
+| Internet | Loading token images from the `image` URI parameter | No | Normal |
+| Vibrate | Feedback when a QR code is recognized | No | Normal |
+| Use fingerprint | Unlocking tokens that require authentication (`lock`) | No | Normal |
+| Bluetooth, Bluetooth admin, Bluetooth scan/connect, coarse location | Sharing a code with a nearby device over Bluetooth LE | No | Dangerous (scan/connect, location) |
 
-| Permission | Usage                    | Required | Permission type |
-|------------|--------------------------|----------|-----------------|
-| Camera     | Recognition of QR codes  | No       | Dangerous       |
-| Internet   | Token image provisioning | No       | Normal          |
+## License
 
-## Alternatives
-
-Here are some open-source alternative apps providing similar functionality:
-- [Aegis](https://github.com/beemdevelopment/Aegis)
-- [FreeOTP+](https://github.com/helloworld1/FreeOTPPlus)
-- [Proton Authenticator](https://github.com/protonpass/android-authenticator)
+Apache License 2.0, see [COPYING](COPYING).
