@@ -418,138 +418,128 @@ public class Activity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_about:
-                try {
-                    Resources r = getResources();
-                    PackageManager pm = getPackageManager();
-                    PackageInfo info = pm.getPackageInfo(getPackageName(), 0);
-                    final SpannableString msg = new SpannableString(r.getString(R.string.main_about_message));
-                    Linkify.addLinks(msg, Linkify.ALL);
+        int id = item.getItemId();
 
-                    final AlertDialog dialog = new AlertDialog.Builder(this)
-                            .setTitle(r.getString(R.string.main_about_title,
-                                    info.versionName, info.versionCode))
-                            .setMessage(HtmlCompat.fromHtml(r.getString(R.string.main_about_message), HtmlCompat.FROM_HTML_MODE_LEGACY))
-                            .setPositiveButton(R.string.close, null)
-                            .create();
+        if (id == R.id.action_about) {
+            try {
+                Resources r = getResources();
+                PackageManager pm = getPackageManager();
+                PackageInfo info = pm.getPackageInfo(getPackageName(), 0);
+                final SpannableString msg = new SpannableString(r.getString(R.string.main_about_message));
+                Linkify.addLinks(msg, Linkify.ALL);
 
-                    dialog.show();
+                final AlertDialog dialog = new AlertDialog.Builder(this)
+                        .setTitle(r.getString(R.string.main_about_title,
+                                info.versionName, info.versionCode))
+                        .setMessage(HtmlCompat.fromHtml(r.getString(R.string.main_about_message), HtmlCompat.FROM_HTML_MODE_LEGACY))
+                        .setPositiveButton(R.string.close, null)
+                        .create();
 
-                    ((TextView)dialog.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
-                } catch (PackageManager.NameNotFoundException e) {
-                    Log.e(LOGTAG, "Exception", e);
-                    return false;
-                }
+                dialog.show();
 
+                ((TextView)dialog.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.e(LOGTAG, "Exception", e);
+                return false;
+            }
+
+            return true;
+        } else if (id == R.id.action_down) {
+            if (mTokenAdapter.isSelected(mTokenAdapter.getItemCount() - 1))
                 return true;
 
-            case R.id.action_down:
-                if (mTokenAdapter.isSelected(mTokenAdapter.getItemCount() - 1))
-                    return true;
+            for (Integer i : new TreeSet<>(mTokenAdapter.getSelected().descendingSet()))
+                mTokenAdapter.move(i, i + 1);
 
-                for (Integer i : new TreeSet<>(mTokenAdapter.getSelected().descendingSet()))
-                    mTokenAdapter.move(i, i + 1);
+            mRecyclerView.scrollToPosition(mTokenAdapter.getSelected().first());
+            return true;
+        } else if (id == R.id.action_edit) {
+            int selected = mTokenAdapter.getSelected().first();
+            TokenIcon token_icon = mTokenAdapter.getTokenIcon(selected);
+            Pair<String, String> label = mTokenAdapter.getLabel(selected);
+            Pair<Integer, String> image = token_icon.mImage;
+            int color = token_icon.mColor;
 
-                mRecyclerView.scrollToPosition(mTokenAdapter.getSelected().first());
+            EditTokenDialogFragment edit = EditTokenDialogFragment.newInstance(label.first,
+                    label.second, image.first, image.second, color);
+            edit.show(getSupportFragmentManager(), edit.getTag());
+
+            return true;
+        } else if (id == R.id.action_up) {
+            if (mTokenAdapter.isSelected(0))
                 return true;
 
-            case R.id.action_edit:
-                int selected = mTokenAdapter.getSelected().first();
-                TokenIcon token_icon = mTokenAdapter.getTokenIcon(selected);
-                Pair<String, String> label = mTokenAdapter.getLabel(selected);
-                Pair<Integer, String> image = token_icon.mImage;
-                int color = token_icon.mColor;
+            for (Integer i : new TreeSet<>(mTokenAdapter.getSelected()))
+                mTokenAdapter.move(i, i - 1);
 
-                EditTokenDialogFragment edit = EditTokenDialogFragment.newInstance(label.first,
-                        label.second, image.first, image.second, color);
-                edit.show(getSupportFragmentManager(), edit.getTag());
-
-                return true;
-
-            case R.id.action_up:
-                if (mTokenAdapter.isSelected(0))
-                    return true;
-
-                for (Integer i : new TreeSet<>(mTokenAdapter.getSelected()))
-                    mTokenAdapter.move(i, i - 1);
-
-                mRecyclerView.scrollToPosition(mTokenAdapter.getSelected().first());
-                return true;
-
-            case R.id.action_delete:
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.main_deletion_title)
-                        .setMessage(R.string.main_deletion_message)
-                        .setNegativeButton(R.string.cancel, null)
-                        .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                for (Integer i : new TreeSet<>(mTokenAdapter.getSelected().descendingSet())) {
-                                    try { mTokenAdapter.delete(i); }
-                                    catch (GeneralSecurityException | IOException e) {
-                                        Log.e(LOGTAG, "Exception", e);
-                                    }
+            mRecyclerView.scrollToPosition(mTokenAdapter.getSelected().first());
+            return true;
+        } else if (id == R.id.action_delete) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.main_deletion_title)
+                    .setMessage(R.string.main_deletion_message)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            for (Integer i : new TreeSet<>(mTokenAdapter.getSelected().descendingSet())) {
+                                try { mTokenAdapter.delete(i); }
+                                catch (GeneralSecurityException | IOException e) {
+                                    Log.e(LOGTAG, "Exception", e);
                                 }
-
-                                mFloatingActionButton.show();
                             }
-                        }).show();
 
-                return true;
+                            mFloatingActionButton.show();
+                        }
+                    }).show();
 
-            case R.id.action_clipboard:
-                boolean copy_clipboard = mSettings.getBoolean(AUTO_COPY_CLIPBOARD, false);
+            return true;
+        } else if (id == R.id.action_clipboard) {
+            boolean copy_clipboard = mSettings.getBoolean(AUTO_COPY_CLIPBOARD, false);
 
-                mSettings.edit().putBoolean(AUTO_COPY_CLIPBOARD, !copy_clipboard).apply();
-                UserNotifier.show(this, R.string.auto_copy_clipboard_toast, !copy_clipboard ? R.string.state_enabled_toast : R.string.state_disabled_toast);
+            mSettings.edit().putBoolean(AUTO_COPY_CLIPBOARD, !copy_clipboard).apply();
+            UserNotifier.show(this, R.string.auto_copy_clipboard_toast, !copy_clipboard ? R.string.state_enabled_toast : R.string.state_disabled_toast);
 
-                /* Update checkbox icon in menu */
-                if(mAutoClipboard == null) return true;
-                mAutoClipboard.setIcon(!copy_clipboard ? R.drawable.ic_check_box_checked : R.drawable.ic_check_box_blank);
+            /* Update checkbox icon in menu */
+            if(mAutoClipboard == null) return true;
+            mAutoClipboard.setIcon(!copy_clipboard ? R.drawable.ic_check_box_checked : R.drawable.ic_check_box_blank);
 
-                return true;
+            return true;
+        } else if (id == R.id.action_sort_mru) {
+            boolean sortByMru = mSettings.getBoolean(SORT_BY_MRU, false);
 
-            case R.id.action_sort_mru:
-                boolean sortByMru = mSettings.getBoolean(SORT_BY_MRU, false);
+            mSettings.edit().putBoolean(SORT_BY_MRU, !sortByMru).apply();
+            UserNotifier.show(this, R.string.sort_by_recent_use_toast, !sortByMru ? R.string.state_enabled_toast : R.string.state_disabled_toast);
 
-                mSettings.edit().putBoolean(SORT_BY_MRU, !sortByMru).apply();
-                UserNotifier.show(this, R.string.sort_by_recent_use_toast, !sortByMru ? R.string.state_enabled_toast : R.string.state_disabled_toast);
+            /* Update checkbox icon in menu */
+            if (mSortByMru != null) {
+                mSortByMru.setIcon(!sortByMru ? R.drawable.ic_check_box_checked : R.drawable.ic_check_box_blank);
+            }
 
-                /* Update checkbox icon in menu */
-                if (mSortByMru != null) {
-                    mSortByMru.setIcon(!sortByMru ? R.drawable.ic_check_box_checked : R.drawable.ic_check_box_blank);
-                }
+            /* If enabling, sort immediately */
+            if (!sortByMru) {
+                mTokenAdapter.sortByMostRecentlyUsed();
+            }
 
-                /* If enabling, sort immediately */
-                if (!sortByMru) {
-                    mTokenAdapter.sortByMostRecentlyUsed();
-                }
+            return true;
+        } else if (id == R.id.action_backup) {
+            Intent backupIntent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            backupIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            backupIntent.setType("application/xml");
+            backupIntent.putExtra(Intent.EXTRA_TITLE, "externalBackup");
+            mBackupSaveLauncher.launch(backupIntent);
 
-                return true;
+            return true;
+        } else if (id == R.id.action_restore) {
+            Intent restoreIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            restoreIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            restoreIntent.setType("*/*");
+            mRestoreSaveLauncher.launch(restoreIntent);
 
-            case R.id.action_backup:
-
-                Intent backupIntent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-                backupIntent.addCategory(Intent.CATEGORY_OPENABLE);
-                backupIntent.setType("application/xml");
-                backupIntent.putExtra(Intent.EXTRA_TITLE, "externalBackup");
-                mBackupSaveLauncher.launch(backupIntent);
-
-                return true;
-
-            case R.id.action_restore:
-
-                Intent restoreIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                restoreIntent.addCategory(Intent.CATEGORY_OPENABLE);
-                restoreIntent.setType("*/*");
-                mRestoreSaveLauncher.launch(restoreIntent);
-
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
+            return true;
         }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -560,33 +550,18 @@ public class Activity extends AppCompatActivity
         for (int i = 0; i < mMenu.size(); i++) {
             MenuItem mi = mMenu.getItem(i);
 
-            switch (mi.getItemId()) {
-                case R.id.menu_todo:
-                    mi.setVisible(selected.size() == 0);
-                    break;
-                case R.id.action_backup:
-                case R.id.action_restore:
-                case R.id.action_clipboard:
-
-                case R.id.action_up:
-                    mi.setVisible(selected.size() > 0);
-                    mi.setEnabled(!mTokenAdapter.isSelected(0));
-                    break;
-
-                case R.id.action_down:
-                    mi.setVisible(selected.size() > 0);
-                    mi.setEnabled(!mTokenAdapter.isSelected(mTokenAdapter.getItemCount() - 1));
-                    break;
-                case R.id.action_edit:
-                    mi.setVisible(selected.size() > 0);
-                    break;
-
-                case R.id.action_delete:
-                    mi.setVisible(selected.size() > 0);
-                    break;
-
-                default:
-                    break;
+            int id = mi.getItemId();
+            if (id == R.id.menu_todo) {
+                mi.setVisible(selected.size() == 0);
+            } else if (id == R.id.action_backup || id == R.id.action_restore
+                    || id == R.id.action_clipboard || id == R.id.action_up) {
+                mi.setVisible(selected.size() > 0);
+                mi.setEnabled(!mTokenAdapter.isSelected(0));
+            } else if (id == R.id.action_down) {
+                mi.setVisible(selected.size() > 0);
+                mi.setEnabled(!mTokenAdapter.isSelected(mTokenAdapter.getItemCount() - 1));
+            } else if (id == R.id.action_edit || id == R.id.action_delete) {
+                mi.setVisible(selected.size() > 0);
             }
         }
     }

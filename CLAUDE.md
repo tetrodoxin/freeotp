@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a single Gradle module (`:mobile`) written in Java, package `org.fedorahosted.freeotp`, using view binding (no Kotlin, no Compose).
+FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a single Gradle module (`:mobile`) written in Java, package `org.fedorahosted.freeotp`, using view binding. It is being migrated to Kotlin + Compose (see below). The build uses Gradle 9 / AGP 9 (built-in Kotlin) with Kotlin DSL scripts and a version catalog in `gradle/libs.versions.toml`.
 
 ## Commands
 
@@ -61,6 +61,7 @@ The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Co
 
 - Commit messages: a title under 50 characters, a blank line, then an optional body with lines under 100 characters, then optional footer lines (e.g. `Fixes #<n>`, one per issue). Squash small changes into one commit. UI changes should come with screenshots of the new or changed screens.
 - User-visible strings go in `res/values/strings.xml`. There are many translated `values-*` locales, and `generateLocaleConfig` is on. Toast-like messages go through `utils/UserNotifier`.
+- Resource IDs are not `final` (AGP 9), so don't `switch` on `R.id.*`; use `if` chains.
 - Edge-to-edge inset handling for targetSdk 35+ is centralized in `utils/SystemBarInsets`.
 - Store listing metadata lives in `fastlane/metadata/android`.
 

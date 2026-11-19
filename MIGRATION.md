@@ -41,12 +41,14 @@ These hold for every phase:
 
 ### Phase 0: Foundation (no visible change)
 
-- [ ] Add the Kotlin Android plugin (Kotlin 2.x) and the Compose compiler plugin; JVM target 17
-      for Java and Kotlin
-- [ ] Add the Compose BOM, `activity-compose`, `lifecycle-viewmodel-compose`, Material 3 and
+- [x] Gradle 9.6, AGP 9.4 (built-in Kotlin) and the Compose compiler plugin; Kotlin DSL build
+      scripts with a version catalog (`gradle/libs.versions.toml`); JVM target 17; compileSdk 37
+      (required by the Compose BOM), targetSdk unchanged at 35
+- [x] Add the Compose BOM, `activity-compose`, `lifecycle-viewmodel-compose`, Material 3 and
       `ui-test-junit4`
-- [ ] Replace legacy dependencies: `com.android.support.constraint`, `com.android.support.test`
-      runner and espresso 3.0.2 → androidx equivalents; move `byte-buddy` out of `implementation`
+- [x] Remove legacy dependencies: `com.android.support.constraint`, `com.android.support.test`
+      runner and espresso 3.0.2 (unused), `byte-buddy`, Jetifier; androidx test runner instead
+- [x] Resource IDs are no longer `final` under AGP 9: `switch` on `R.id` replaced by `if` chains
 - [ ] `FreeOTPTheme` (Material 3) built from `colors.xml` with dark mode; the XML theme remains
       for the window
 - [ ] Backup-format golden tests: fixed serialized `MasterKey`, `EncryptedKey`, `Token` JSON and
@@ -108,4 +110,4 @@ These hold for every phase:
 
 ## Status
 
-Not started.
+Phase 0 in progress on branch `compose/phase-0`.
