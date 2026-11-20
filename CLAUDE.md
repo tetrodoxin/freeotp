@@ -42,9 +42,10 @@ Backup paths (see `BACKUP.md`): Android Auto Backup of the `tokenBackup` prefs v
 
 ### App flow
 
-- `PasswordActivity` is the launcher. It provisions the master password on first run (strength checked with nbvcxz) and then hands off to `main.Activity`.
+- `PasswordActivity` (Kotlin/Compose, `ui/password/`) is the launcher. It provisions the master password on first run (strength checked with nbvcxz in `PasswordViewModel`) and then hands off to `main.Activity`.
 - `main.Activity` handles `otpauth://totp|hotp` VIEW intents, the toolbar menus (backup, restore, scan, manual add) and restore prompts. Dialogs live in `main/*DialogFragment`. QR scanning uses CameraX and ZXing.
-- `OnBoardingActivity`, `WelcomeFragment`, `BackupsFragment` and `KeystoreFragment` are first-run onboarding screens.
+- `OnBoardingActivity` (Kotlin/Compose, `ui/onboarding/`) shows the first-run introduction; completion is stored as `onBoardingComplete` in the default shared preferences.
+- `ManualAdd` (Kotlin/Compose, `ui/manualadd/`) returns the entered token as an `otpauth://` URI result; `ManualAddForm.toUri()` builds it.
 - `main/share/`: sharing a code. `ShareFragment` iterates over `Discoverable` implementations (`Clipboard`, and `Jelling`, which shares over Bluetooth LE GATT).
 
 ### Token model
@@ -68,6 +69,6 @@ The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Co
 
 ## Ongoing migration to Kotlin + Compose
 
-The app is being migrated to Kotlin and Jetpack Compose (Material 3) in phases. `MIGRATION.md` holds the decisions, guardrails, phase checklist and status. Read it before touching UI code, and tick off items there as they land. Until the migration is done, parts of the descriptions above (view binding, `UserNotifier`, `SystemBarInsets`, RecyclerView `Adapter`) describe the old code. Two rules matter most:
+The app is being migrated to Kotlin and Jetpack Compose (Material 3) in phases. `MIGRATION.md` holds the decisions, guardrails, phase checklist and status. Read it before touching UI code, and tick off items there as they land. Until the migration is done, parts of the descriptions above (view binding, `UserNotifier`, `SystemBarInsets`, RecyclerView `Adapter`) describe the old code. Compose screens live in `ui/<screen>/` (Compose UI tests in the matching `androidTest` package, which `-PtestMinified` skips); their activities are thin `ComponentActivity` wrappers that call `enableEdgeToEdge()`, and activities with text input need `android:windowSoftInputMode="adjustResize"` so `imePadding()` works. Two rules matter most:
 - Never change field names or types of the Gson-persisted classes (`Token`, `MasterKey`, `EncryptedKey`). `BackupFormatGoldenTest` guards the backup format: never regenerate its fixtures to make it pass. After touching these classes or `proguard-rules.pro`, also run the tests with `-PtestMinified`.
 - New UI code is Kotlin + Compose; don't add new XML layouts or Java UI classes.

@@ -69,11 +69,19 @@ These hold for every phase:
 
 ### Phase 1: Standalone screens
 
-- [ ] `OnBoardingActivity` + `WelcomeFragment`, `BackupsFragment`, `KeystoreFragment` →
-      Compose screens with `HorizontalPager`
-- [ ] `ManualAdd` → Compose form; keeps returning the `otpauth://` URI as the activity result
-- [ ] `PasswordActivity` → Compose + ViewModel; the `AsyncTask` nbvcxz evaluator becomes a
-      coroutine
+- [x] `OnBoardingActivity` + `WelcomeFragment`, `BackupsFragment`, `KeystoreFragment` →
+      Compose screens with `HorizontalPager` (`ui/onboarding/`)
+- [x] `ManualAdd` → Compose form (`ui/manualadd/`); keeps returning the `otpauth://` URI as the
+      activity result, in the same format (pinned by `ManualAddFormTest`). Digits no longer come
+      from the localized button text
+- [x] `PasswordActivity` → Compose + `PasswordViewModel` (`ui/password/`); the `AsyncTask` nbvcxz
+      evaluator becomes a coroutine that is never interrupted, and provisioning (PBKDF2) moved off
+      the main thread
+- [x] `adjustResize` for the activities with text input, so `imePadding()` and snackbars work
+      with the keyboard open
+- Kept as before on purpose: a weak password only warns (Done is enabled once confirmed);
+  a provisioning failure is logged and the app continues; ManualAdd defaults to HOTP/SHA256
+- New strings `navigate_up`, `password_show`, `password_hide` are English-only so far
 
 ### Phase 2: Dialogs and sharing
 
@@ -121,4 +129,4 @@ These hold for every phase:
 
 ## Status
 
-Phase 0 done on branch `compose/phase-0`. Next: Phase 1.
+Phase 0 done. Phase 1 done on branch `compose/phase-1`. Next: Phase 2.
