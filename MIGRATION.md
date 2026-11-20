@@ -64,6 +64,8 @@ These hold for every phase:
       tests skipped there); removing the Gson keep rules makes 5 golden tests fail, so the guard
       works. Release APK: 15.0 MB → 4.0 MB. Smoke-tested on a signed release build: onboarding,
       password strength check (nbvcxz), provisioning, adding tokens via intent, code generation
+- [x] CI job `minified-backup-tests` runs `BackupFormatGoldenTest` with `-PtestMinified` on API 29
+      on every PR
 
 ### Phase 1: Standalone screens
 

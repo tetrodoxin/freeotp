@@ -53,3 +53,37 @@ jobs:
         script: ./gradlew connectedAndroidTest --stacktrace
         disable-animations: true
         disable-spellchecker: true
+
+  # Checks that the R8 keep rules preserve the backup format: BackupFormatGoldenTest against the
+  # minified release build (see MIGRATION.md). One API level is enough; dependency or AGP updates
+  # can change R8 behavior, so this runs on every PR.
+  minified-backup-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: 17
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Run golden tests against the minified build
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 29
+        target: default
+        arch: x86_64
+        script: ./gradlew connectedAndroidTest -PtestMinified -Pandroid.testInstrumentationRunnerArguments.class=org.fedorahosted.freeotp.BackupFormatGoldenTest --stacktrace
+        disable-animations: true
+        disable-spellchecker: true
