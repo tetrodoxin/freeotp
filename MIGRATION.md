@@ -58,8 +58,12 @@ These hold for every phase:
       `androidTest/assets/golden/`): a backup exported by the pre-migration code must still
       deserialize, round-trip byte-for-byte through Gson, decrypt, restore and produce RFC codes.
       Never regenerate the fixtures to make a failing test pass
-- [ ] Enable R8 for release (separate step) with Gson keep rules; verify the golden tests and a
-      manual backup → restore round trip on a release build
+- [x] Enable R8 and resource shrinking for release (`proguard-rules.pro`, `res/raw/keep.xml`
+      for the name-only `fa_*`/`brand_*` resources). `./gradlew connectedAndroidTest
+      -PtestMinified` runs the instrumented tests against the minified release build (Compose UI
+      tests skipped there); removing the Gson keep rules makes 5 golden tests fail, so the guard
+      works. Release APK: 15.0 MB → 4.0 MB. Smoke-tested on a signed release build: onboarding,
+      password strength check (nbvcxz), provisioning, adding tokens via intent, code generation
 
 ### Phase 1: Standalone screens
 
@@ -115,4 +119,4 @@ These hold for every phase:
 
 ## Status
 
-Phase 0 in progress on branch `compose/phase-0`.
+Phase 0 done on branch `compose/phase-0`. Next: Phase 1.

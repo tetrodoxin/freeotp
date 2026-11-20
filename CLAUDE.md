@@ -16,6 +16,7 @@ FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a sin
 ./gradlew connectedAndroidTest
 ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.fedorahosted.freeotp.TokenRFC6238Test
 ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.fedorahosted.freeotp.TokenRFC6238Test#methodName
+./gradlew connectedAndroidTest -PtestMinified   # same tests against the R8-minified release build
 ```
 
 CI (`.github/workflows/build.yml`) runs the instrumented tests on emulators at API 24, 29 and 35, so changes must work across that range (minSdk 23).
@@ -68,5 +69,5 @@ The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Co
 ## Ongoing migration to Kotlin + Compose
 
 The app is being migrated to Kotlin and Jetpack Compose (Material 3) in phases. `MIGRATION.md` holds the decisions, guardrails, phase checklist and status. Read it before touching UI code, and tick off items there as they land. Until the migration is done, parts of the descriptions above (view binding, `UserNotifier`, `SystemBarInsets`, RecyclerView `Adapter`) describe the old code. Two rules matter most:
-- Never change field names or types of the Gson-persisted classes (`Token`, `MasterKey`, `EncryptedKey`), and keep them in Java until the backup-format golden tests exist.
+- Never change field names or types of the Gson-persisted classes (`Token`, `MasterKey`, `EncryptedKey`). `BackupFormatGoldenTest` guards the backup format: never regenerate its fixtures to make it pass. After touching these classes or `proguard-rules.pro`, also run the tests with `-PtestMinified`.
 - New UI code is Kotlin + Compose; don't add new XML layouts or Java UI classes.

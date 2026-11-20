@@ -1,25 +1,33 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Keep line numbers for readable stack traces; hide the source file name.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# --- Gson -------------------------------------------------------------------------------------
+# Generic signatures and annotations are needed for TypeToken and @SerializedName.
+-keepattributes Signature,*Annotation*,InnerClasses,EnclosingMethod
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Enums are serialized by constant name (e.g. Token.Type).
+-keepclassmembers enum * { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# --- Backup format (see MIGRATION.md, guarded by BackupFormatGoldenTest) ---------------------
+# These classes are persisted with Gson reflection. MasterKey and EncryptedKey are stored under
+# their raw field names (mCipher, mSalt, ...), so neither the classes nor their fields may be
+# renamed or removed, or existing backups stop restoring.
+-keep class org.fedorahosted.freeotp.Token { <fields>; }
+-keep class org.fedorahosted.freeotp.Token$Secret { <fields>; }
+-keep class org.fedorahosted.freeotp.encryptor.MasterKey { <fields>; }
+-keep class org.fedorahosted.freeotp.encryptor.EncryptedKey { <fields>; }
 
-# Address GSON crash
-# https://stackoverflow.com/questions/15543607/assertionerror-in-gson-enumtypeadapter-when-using-proguard-obfuscation
--keepclassmembers enum * {*;}
+# --- Libraries --------------------------------------------------------------------------------
+# nbvcxz loads its dictionaries from jar resources relative to its classes.
+-keep class me.gosimple.nbvcxz.** { *; }
+-dontwarn me.gosimple.nbvcxz.**
+
+# OkHttp 3 (pulled in by Picasso) references optional platform classes that are not on the
+# classpath. Picasso is replaced by Coil in Phase 2 of MIGRATION.md.
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**

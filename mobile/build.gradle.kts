@@ -21,11 +21,26 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            testProguardFiles("test-proguard-rules.pro")
         }
         debug {
             applicationIdSuffix = ".debug"
+        }
+    }
+
+    // `./gradlew connectedAndroidTest -PtestMinified` runs the instrumented tests against the
+    // R8-minified release build (signed with the debug key) to verify the keep rules, notably
+    // BackupFormatGoldenTest. Compose UI tests (package `org.fedorahosted.freeotp.ui`) are skipped:
+    // they need desugared library classes that R8 renames in the app APK.
+    if (providers.gradleProperty("testMinified").isPresent) {
+        testBuildType = "release"
+        defaultConfig.testInstrumentationRunnerArguments["notPackage"] = "org.fedorahosted.freeotp.ui"
+        buildTypes.getByName("release") {
+            signingConfig = signingConfigs.getByName("debug")
+            proguardFile("proguard-rules-minified-tests.pro")
         }
     }
 
