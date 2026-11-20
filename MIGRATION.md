@@ -81,7 +81,7 @@ These hold for every phase:
       with the keyboard open
 - Kept as before on purpose: a weak password only warns (Done is enabled once confirmed);
   a provisioning failure is logged and the app continues; ManualAdd defaults to HOTP/SHA256
-- New strings `navigate_up`, `password_show`, `password_hide` are English-only so far
+- New strings `navigate_up`, `password_show`, `password_hide` are translated to German only
 
 ### Phase 2: Dialogs and sharing
 

@@ -43,7 +43,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
@@ -86,7 +86,7 @@ fun ManualAddScreen(
 ) {
     var form by rememberSaveable(stateSaver = FormSaver) { mutableStateOf(ManualAddForm()) }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val resources = LocalResources.current
 
     Scaffold(
         topBar = {
@@ -193,7 +193,7 @@ fun ManualAddScreen(
                     } else {
                         scope.launch {
                             snackbar.currentSnackbarData?.dismiss()
-                            snackbar.showSnackbar(context.getString(error))
+                            snackbar.showSnackbar(resources.getString(error))
                         }
                     }
                 },
