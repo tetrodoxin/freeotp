@@ -29,7 +29,8 @@ class MainDialogsTest {
     private var edited: Pair<String, String>? = null
 
     private val listener = object : MainDialogListener {
-        override fun onEditTokenSave(account: String, issuer: String) {
+        override fun onEditTokenSave(tokenId: String, account: String, issuer: String) {
+            assertEquals("t1", tokenId)
             edited = account to issuer
         }
 
@@ -47,7 +48,7 @@ class MainDialogsTest {
 
     @Test
     fun editTokenSavesChangedLabel() {
-        viewModel.showEditToken("jdoe", "Example", R.drawable.ic_freeotp, null, 0xFF000000.toInt())
+        viewModel.showEditToken("t1", "jdoe", "Example", R.drawable.ic_freeotp, null, 0xFF000000.toInt())
 
         compose.onNodeWithTag("edit_account").assertTextContains("jdoe")
         compose.onNodeWithTag("edit_issuer").performTextReplacement("Example Inc")
@@ -59,7 +60,7 @@ class MainDialogsTest {
 
     @Test
     fun editTokenCancelKeepsLabel() {
-        viewModel.showEditToken("jdoe", "Example", R.drawable.ic_freeotp, "https://invalid.example/x.png", 0)
+        viewModel.showEditToken("t1", "jdoe", "Example", R.drawable.ic_freeotp, "https://invalid.example/x.png", 0)
 
         compose.onNodeWithTag("edit_issuer").performTextReplacement("Changed")
         compose.onNodeWithText(string(R.string.cancel)).performClick()

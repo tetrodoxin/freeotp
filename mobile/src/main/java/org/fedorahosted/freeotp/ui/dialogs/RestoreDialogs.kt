@@ -3,6 +3,8 @@ package org.fedorahosted.freeotp.ui.dialogs
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,10 +31,11 @@ private val NotCancelable = DialogProperties(dismissOnBackPress = false, dismiss
 
 /**
  * Asks for the backup password. [failures] increases with each wrong password and shows the error.
+ * While [busy] (the restore runs), the buttons are disabled and a progress bar shows.
  * The password is deliberately kept out of saved instance state.
  */
 @Composable
-fun RestoreDialog(failures: Int, onRestore: (String) -> Unit, onCancel: () -> Unit) {
+fun RestoreDialog(failures: Int, onRestore: (String) -> Unit, onCancel: () -> Unit, busy: Boolean = false) {
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<Int?>(null) }
     val focus = remember { FocusRequester() }
@@ -45,7 +48,8 @@ fun RestoreDialog(failures: Int, onRestore: (String) -> Unit, onCancel: () -> Un
     }
 
     val submit = {
-        if (password.isEmpty()) error = R.string.main_restore_password_required
+        if (busy) Unit
+        else if (password.isEmpty()) error = R.string.main_restore_password_required
         else onRestore(password)
     }
 
@@ -70,13 +74,16 @@ fun RestoreDialog(failures: Int, onRestore: (String) -> Unit, onCancel: () -> Un
                         .focusRequester(focus)
                         .testTag("restore_password"),
                 )
+                if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("restore_progress"))
             }
         },
         confirmButton = {
-            TextButton(onClick = submit, Modifier.testTag("restore_ok")) { Text(stringResource(R.string.ok)) }
+            TextButton(onClick = submit, Modifier.testTag("restore_ok"), enabled = !busy) {
+                Text(stringResource(R.string.ok))
+            }
         },
         dismissButton = {
-            TextButton(onClick = onCancel, Modifier.testTag("restore_cancel")) {
+            TextButton(onClick = onCancel, Modifier.testTag("restore_cancel"), enabled = !busy) {
                 Text(stringResource(R.string.cancel))
             }
         },

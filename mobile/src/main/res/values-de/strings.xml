@@ -109,6 +109,10 @@
     <string name="manual_interval">Interval</string>
     <string name="manual_add_token">Token hinzufügen</string>
     <string name="navigate_up">Nach oben</string>
+    <string name="share_code">Code teilen</string>
+    <string name="main_clear_selection">Auswahl aufheben</string>
+    <string name="main_enter_manually">Token manuell eingeben</string>
+    <string name="main_scan_qr_code">QR-Code scannen</string>
     <string name="manual_accessibility_algorithm">Token-Algorithmus</string>
     <string name="manual_accessibility_interval">Token-Interval</string>
     <string name="edit_token">Token bearbeiten</string>

@@ -103,7 +103,7 @@ private fun TokenImage(dialog: MainDialog.EditToken) {
 private fun EditTokenDialogPreview() {
     FreeOTPTheme {
         EditTokenDialog(
-            dialog = MainDialog.EditToken("jdoe@example.com", "Example", R.drawable.ic_freeotp, null, 0xFF2196F3.toInt()),
+            dialog = MainDialog.EditToken("1", "jdoe@example.com", "Example", R.drawable.ic_freeotp, null, 0xFF2196F3.toInt()),
             onSave = { _, _ -> },
             onDismiss = {},
         )

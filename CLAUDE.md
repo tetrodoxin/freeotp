@@ -28,7 +28,7 @@ CI (`.github/workflows/build.yml`) runs the instrumented tests on emulators at A
 Secrets are never stored in plaintext. Three layers interact, and you need to know all of them before touching tokens, backup or restore:
 
 1. **AndroidKeyStore**: each token's HMAC secret is imported under the token's UUID alias, and code generation uses that non-extractable key. A `masterKey` alias holds an AES/GCM **encrypt-only** key.
-2. **`tokenStore` SharedPreferences** (`data/TokenRepository.kt`): token metadata as Gson JSON keyed by UUID, plus a `tokenOrder` UUID list. `TokenRepository` is UUID-keyed: it adds, deletes and reorders tokens, generates codes (`getCode`), restores backups and migrates legacy pre-2.0 tokens from the old `tokens` prefs (`compat()` / `Token.compat`). `main/Adapter` is now only the RecyclerView adapter over it (position → UUID).
+2. **`tokenStore` SharedPreferences** (`data/TokenRepository.kt`): token metadata as Gson JSON keyed by UUID, plus a `tokenOrder` UUID list. `TokenRepository` is UUID-keyed: it adds, deletes and reorders tokens, generates codes (`getCode`), restores backups and migrates legacy pre-2.0 tokens from the old `tokens` prefs (`compat()` / `Token.compat`). Use one instance per process: `MainViewModel` owns it and calls it from a single background thread. (The legacy `main/Adapter` wraps its own instance; only tests still use it.)
 3. **`tokenBackup` SharedPreferences** (`TokenPersistence`): for each token, `<uuid>` → JSON `{key: EncryptedKey}` (the secret encrypted under the master key) and `<uuid>-token` → serialized token metadata, plus `masterKey` → a Gson-serialized `MasterKey`.
 
 `encryptor/`:
@@ -43,7 +43,7 @@ Backup paths (see `BACKUP.md`): Android Auto Backup of the `tokenBackup` prefs v
 ### App flow
 
 - `PasswordActivity` (Kotlin/Compose, `ui/password/`) is the launcher. It provisions the master password on first run (strength checked with nbvcxz in `PasswordViewModel`) and then hands off to `main.Activity`.
-- `main.Activity` handles `otpauth://totp|hotp` VIEW intents, the toolbar menus (backup, restore, scan, manual add) and restore prompts. Its dialogs are Compose (`ui/dialogs/`, shown through `MainDialogsViewModel`); the remaining simple alerts are `AlertDialog`s. QR scanning uses CameraX and ZXing.
+- `main.Activity` (Kotlin/Compose, `ui/main/`) shows the token grid (`MainScreen`, `TokenCard`), handles `otpauth://totp|hotp` VIEW intents, backup/restore documents and the device-credential prompt. State lives in `MainViewModel` (tokens, selection by UUID, shown codes, settings); one-shot effects are `MainEvent`s. All dialogs are Compose (`ui/dialogs/`, `MainDialogsViewModel` + `MainDialogHost`). QR scanning is still the View-based `ScanDialogFragment` (CameraX and ZXing).
 - `OnBoardingActivity` (Kotlin/Compose, `ui/onboarding/`) shows the first-run introduction; completion is stored as `onBoardingComplete` in the default shared preferences.
 - `ManualAdd` (Kotlin/Compose, `ui/manualadd/`) returns the entered token as an `otpauth://` URI result; `ManualAddForm.toUri()` builds it.
 - Sharing a code: the Compose `ShareSheet` (`ui/share/`) lists the `ShareTarget`s of the `Discoverable` implementations in `main/share/` (`Clipboard`, and `Jelling`, which shares over Bluetooth LE GATT).
@@ -57,7 +57,7 @@ Backup paths (see `BACKUP.md`): Android Auto Backup of the `tokenBackup` prefs v
 
 ### Tests
 
-The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Context.java` and `MemorySharedPreferences.java` provide a fake Context backed by in-memory SharedPreferences, so `Adapter` and `TokenPersistence` can be tested without touching app data.
+The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Context.java` and `MemorySharedPreferences.java` provide a fake Context backed by in-memory SharedPreferences, so `TokenRepository`, `MainViewModel` and `TokenPersistence` can be tested without touching app data.
 
 ## Conventions
 
@@ -69,6 +69,6 @@ The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Co
 
 ## Ongoing migration to Kotlin + Compose
 
-The app is being migrated to Kotlin and Jetpack Compose (Material 3) in phases. `MIGRATION.md` holds the decisions, guardrails, phase checklist and status. Read it before touching UI code, and tick off items there as they land. Until the migration is done, parts of the descriptions above (view binding, `UserNotifier`, `SystemBarInsets`, RecyclerView `Adapter`) describe the old code. Compose screens live in `ui/<screen>/` (Compose UI tests in the matching `androidTest` package, which `-PtestMinified` skips); their activities are thin `ComponentActivity` wrappers that call `enableEdgeToEdge()`, and activities with text input need `android:windowSoftInputMode="adjustResize"` so `imePadding()` works. Two rules matter most:
+The app is being migrated to Kotlin and Jetpack Compose (Material 3) in phases. `MIGRATION.md` holds the decisions, guardrails, phase checklist and status. Read it before touching UI code, and tick off items there as they land. Until the migration is done, parts of the descriptions above (view binding, `UserNotifier`, `SystemBarInsets`) describe the old code; `Adapter`, `ViewHolder` and their layouts are unused leftovers until Phase 5. Compose screens live in `ui/<screen>/` (Compose UI tests in the matching `androidTest` package, which `-PtestMinified` skips); their activities are thin `ComponentActivity` wrappers that call `enableEdgeToEdge()`, and activities with text input need `android:windowSoftInputMode="adjustResize"` so `imePadding()` works. Two rules matter most:
 - Never change field names or types of the Gson-persisted classes (`Token`, `MasterKey`, `EncryptedKey`). `BackupFormatGoldenTest` guards the backup format: never regenerate its fixtures to make it pass. After touching these classes or `proguard-rules.pro`, also run the tests with `-PtestMinified`.
 - New UI code is Kotlin + Compose; don't add new XML layouts or Java UI classes.

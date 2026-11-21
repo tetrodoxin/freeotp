@@ -116,6 +116,10 @@
     <string name="manual_algorithm">Algorithm</string>
     <string name="manual_interval">Interval</string>
     <string name="navigate_up">Navigate up</string>
+    <string name="share_code">Share code</string>
+    <string name="main_clear_selection">Clear selection</string>
+    <string name="main_enter_manually">Enter token manually</string>
+    <string name="main_scan_qr_code">Scan QR code</string>
     <string name="manual_add_token">Add Token</string>
     <string name="manual_accessibility_algorithm">Token algorithm</string>
     <string name="manual_accessibility_interval">Token Interval</string>

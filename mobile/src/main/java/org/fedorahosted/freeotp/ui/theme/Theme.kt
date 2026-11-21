@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import org.fedorahosted.freeotp.R
 
@@ -45,6 +46,12 @@ private fun lightScheme(): ColorScheme {
         surface = surface,
         onSurface = onSurface,
         onSurfaceVariant = colorResource(R.color.freeotp_grey_dark_primary),
+        // Neutral greys instead of Material's purple-tinted defaults (cards, menus, dialogs).
+        surfaceContainerLowest = Color(0xFFFFFFFF),
+        surfaceContainerLow = Color(0xFFFFFFFF),
+        surfaceContainer = Color(0xFFF4F4F4),
+        surfaceContainerHigh = Color(0xFFEEEEEE),
+        surfaceContainerHighest = Color(0xFFE8E8E8),
     )
 }
 
@@ -67,5 +74,10 @@ private fun darkScheme(): ColorScheme {
         surface = surface,
         onSurface = onSurface,
         onSurfaceVariant = colorResource(R.color.freeotp_grey_primary),
+        surfaceContainerLowest = Color(0xFF0E0E0E),
+        surfaceContainerLow = Color(0xFF1C1C1C),
+        surfaceContainer = Color(0xFF222222),
+        surfaceContainerHigh = Color(0xFF2A2A2A),
+        surfaceContainerHighest = Color(0xFF333333),
     )
 }

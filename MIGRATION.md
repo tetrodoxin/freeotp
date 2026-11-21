@@ -117,21 +117,43 @@ These hold for every phase:
       `TokenRepository` and runs every call to it on a single background thread, including
       opening it and restoring (PBKDF2 is off the main thread now). Shown codes and their expiry
       live in the state; side effects (clipboard, device credential, dialogs, scrolling) are
-      `MainEvent`s. Not wired up yet: the View-based screen still uses `Adapter` until the
-      Compose grid replaces it, and from then on there must be only one `TokenRepository`
+      `MainEvent`s. There must be only one `TokenRepository` per process: the ViewModel's
 - Restore fix: `TokenPersistence.needsRestore` compared UUIDs with `==` and so never skipped
   anything on a device; it is removed. A token whose keystore key was lost gets it back on
   restore and keeps its place instead of being listed twice (which would crash a keyed
   `LazyVerticalGrid`)
-- [ ] Compose token grid: `LazyVerticalGrid` with stable UUID keys and item animations; token card
-      with countdown, active/passive transition and selection animation
-- [ ] `Scaffold`: top bar with selection mode (edit, move up/down, delete) and overflow menu
+- [x] Compose token grid: `LazyVerticalGrid` with stable UUID keys and item animations; token card
+      with countdown, active/passive transition and selection animation (`ui/main/TokenCard.kt`,
+      `MainScreen.kt`)
+- [x] `Scaffold`: top bar with selection mode (edit, move up/down, delete) and overflow menu
       (backup, restore, auto-copy, sort, about), expandable FAB hidden on scroll, `SnackbarHost`
       replacing `UserNotifier`
-- [ ] Confirm-device-credential flow via an `ActivityResultLauncher` keyed by token UUID
-- [ ] About dialog with `AnnotatedString.fromHtml`; edge-to-edge via `enableEdgeToEdge()` and
+- [x] Confirm-device-credential flow via an `ActivityResultLauncher` keyed by token UUID
+- [x] About dialog with `AnnotatedString.fromHtml`; edge-to-edge via `enableEdgeToEdge()` and
       Scaffold insets, replacing `SystemBarInsets`
-- [ ] Keep the hidden random-token mode (long-press the FAB three times)
+- [x] Keep the hidden random-token mode (long-press the FAB three times)
+- `main.Activity` is Kotlin now (same class name, so the manifest entries, the VIEW intent filter
+  and `ScanDialogFragment.addToken` keep working). The remaining `AlertDialog`s (delete, unsafe and
+  invalid URI, lock required, add error, key invalidated) are Compose dialogs in `MainDialogHost`.
+  `FreeOTPTheme` got neutral surface container colors instead of Material's purple tints
+- Behavior changes:
+  - In selection mode a tap toggles the selection (as in Material lists) instead of showing the
+    code; Back and the arrow in the top bar clear it, and the top bar shows the count
+  - The add button hides in selection mode. Without a camera it stays (manual entry only);
+    before, the whole button was hidden, so manual entry was unreachable
+  - The restore dialog shows progress and is disabled while PBKDF2 runs off the main thread
+  - Codes are grouped before bidi-wrapping (the bidi marks broke the grouping in RTL locales),
+    and sharing uses the raw code instead of the displayed text
+  - Auto-copied codes are marked sensitive (`EXTRA_IS_SENSITIVE`, API 33+), so the clipboard
+    preview doesn't show them
+  - A token from a VIEW intent is no longer added a second time when the activity is recreated
+  - The runtime request for `USE_FINGERPRINT` is gone: it is a normal permission, granted at
+    install
+- Left for Phase 5: `Adapter`, `ViewHolder`, `SelectableAdapter`, `GridLayoutItemDecoration`,
+  `activity_main.xml`, `token.xml`, `menu_main.xml`, `UserNotifier` and `SystemBarInsets` are
+  unused by the app now; `TokenAdapterTest`, `TokenCompatTest`, `TokenPersistenceTest` and
+  `BackupFormatGoldenTest` still drive storage through `Adapter` and move to `TokenRepository`
+  when it is deleted
 
 ### Phase 4: QR scanning
 
@@ -155,6 +177,5 @@ These hold for every phase:
 
 ## Status
 
-Phases 0–2 done and merged into `master`. Phase 3 in progress on branch `compose/phase-3`:
-`TokenRepository` and `MainViewModel` done; next is the Compose token grid with the `Scaffold`,
-which wires up the ViewModel and removes `Adapter`.
+Phases 0–2 done and merged into `master`. Phase 3 done on branch `compose/phase-3`. Next: Phase 4
+(QR scanning).
