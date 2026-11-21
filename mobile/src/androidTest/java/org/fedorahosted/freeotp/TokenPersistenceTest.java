@@ -2,12 +2,10 @@ package org.fedorahosted.freeotp;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 import androidx.test.runner.AndroidJUnit4;
 import android.util.Pair;
 
-import org.fedorahosted.freeotp.main.Adapter;
-import org.fedorahosted.freeotp.utils.SelectableAdapter;
+import org.fedorahosted.freeotp.data.TokenRepository;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Test;
@@ -24,7 +22,6 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.UUID;
 
 import javax.crypto.SecretKey;
@@ -34,13 +31,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
-public class TokenPersistenceTest implements SelectableAdapter.EventListener {
-    static {
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
-    }
-
+public class TokenPersistenceTest {
     private Context mContext = new org.fedorahosted.freeotp.Context();
     HashMap<String, String> uris = new HashMap<String, String>();
     int numTokens;
@@ -67,7 +58,7 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
         }
     }
 
-    private Adapter wipeAndRestore(SharedPreferences tokenStore) throws TokenPersistence.BadPasswordException,
+    private TokenRepository wipeAndRestore(SharedPreferences tokenStore) throws TokenPersistence.BadPasswordException,
             GeneralSecurityException, IOException, JSONException {
         JSONArray oldtoken = new JSONArray(tokenStore.getString("tokenOrder", null));
         KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
@@ -79,14 +70,14 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
         tokenStore.edit().clear().commit();
         assertEquals(0, tokenStore.getAll().size());
 
-        Adapter a = new Adapter(mContext, this);
-        assertEquals(0, a.getItemCount());
-        a.restoreTokens(pwd);
+        TokenRepository a = new TokenRepository(mContext);
+        assertEquals(0, a.getSize());
+        a.restore(pwd);
 
         return a;
     }
 
-    private void validateTokens(SharedPreferences tokenStore, Adapter adapter) throws InvalidKeyException,
+    private void validateTokens(SharedPreferences tokenStore, TokenRepository repository) throws InvalidKeyException,
             JSONException, KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, UnrecoverableKeyException {
         JSONArray order = new JSONArray(tokenStore.getString("tokenOrder", null));
         assertEquals(numTokens, order.length());
@@ -105,7 +96,7 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
             assertTrue(token.getCode(key) != null);
         }
 
-        assertEquals(numTokens, adapter.getItemCount());
+        assertEquals(numTokens, repository.getSize());
     }
 
     @Test
@@ -119,25 +110,25 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
         String pwd = "MyM4sterPassw0rd";
 
         tokenBackup.provision(pwd);
-        Adapter a = new Adapter(mContext, this);
+        TokenRepository a = new TokenRepository(mContext);
 
         for (Map.Entry<String, String> entry : uris.entrySet()) {
             Pair<SecretKey, Token> pair = Token.parse(entry.getValue());
             a.add(pair.first, pair.second);
         }
 
-        assertEquals(numTokens, a.getItemCount());
+        assertEquals(numTokens, a.getSize());
 
         // Delete 2 tokens
-        a.delete(0);
-        a.delete(0);
+        a.delete(a.idAt(0));
+        a.delete(a.idAt(0));
         numTokens -= 2;
 
         int tokens = bkp.getAll().size() / 2;
-        assertEquals(numTokens, a.getItemCount());
+        assertEquals(numTokens, a.getSize());
         assertEquals(numTokens, tokens);
 
-        Adapter a2 = wipeAndRestore(cur);
+        TokenRepository a2 = wipeAndRestore(cur);
 
         validateTokens(cur, a2);
     }
@@ -172,7 +163,7 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
         String newPwd = "redhat";
 
         tokenBackup.provision(origPwd);
-        Adapter a = new Adapter(mContext, this);
+        TokenRepository a = new TokenRepository(mContext);
 
         for (Map.Entry<String, String> entry : uris.entrySet()) {
             Pair<SecretKey, Token> pair = Token.parse(entry.getValue());
@@ -183,7 +174,7 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
         copySP(bkp, bkpCopy);
         // Simulate app removal + reinstall
         for (int i = 0; i < numTokens; i++) {
-            a.delete(0);
+            a.delete(a.idAt(0));
         }
         cur.edit().clear().commit();
         assertEquals(0, cur.getAll().size());
@@ -193,20 +184,20 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
 
         // Replace SP backup copy, must be after new provision to not overwrite MK
         copySP(bkpCopy, bkp);
-        a.restoreTokens(origPwd);
+        a.restore(origPwd);
         validateTokens(cur, a);
 
         // Pass 2: export and attempt restore again
         copySP(bkp, bkpCopy);
         for (int i = 0; i < numTokens; i++) {
-            a.delete(0);
+            a.delete(a.idAt(0));
         }
         cur.edit().clear().commit();
         assertEquals(0, cur.getAll().size());
 
         tokenBackup.provision(newPwd);
         copySP(bkpCopy, bkp);
-        a.restoreTokens(origPwd);
+        a.restore(origPwd);
         String order = cur.getString("tokenOrder", null);
         assertNotNull(order);
 
@@ -227,15 +218,11 @@ public class TokenPersistenceTest implements SelectableAdapter.EventListener {
 
         setup(old);
         tokenBackup.provision(pwd);
-        Adapter a = new Adapter(mContext, this);
+        TokenRepository a = new TokenRepository(mContext);
 
-        Adapter a2 = wipeAndRestore(cur);
+        TokenRepository a2 = wipeAndRestore(cur);
 
         validateTokens(cur, a2);
     }
 
-    @Override
-    public void onSelectEvent(NavigableSet<Integer> selected) {
-
-    }
 }

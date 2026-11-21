@@ -6,7 +6,6 @@ import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -14,30 +13,41 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
 import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.activity.ComponentActivity
+import androidx.annotation.StringRes
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
-import androidx.activity.compose.setContent
-import androidx.annotation.StringRes
+import androidx.core.os.BundleCompat
+import androidx.core.os.ConfigurationCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
-import org.fedorahosted.freeotp.ManualAdd
 import org.fedorahosted.freeotp.R
 import org.fedorahosted.freeotp.TokenPersistence
 import org.fedorahosted.freeotp.ui.dialogs.MainDialog
@@ -48,27 +58,33 @@ import org.fedorahosted.freeotp.ui.main.MainActions
 import org.fedorahosted.freeotp.ui.main.MainEvent
 import org.fedorahosted.freeotp.ui.main.MainScreen
 import org.fedorahosted.freeotp.ui.main.MainViewModel
+import org.fedorahosted.freeotp.ui.manualadd.ManualAddScreen
+import org.fedorahosted.freeotp.ui.onboarding.Onboarding
+import org.fedorahosted.freeotp.ui.onboarding.OnboardingScreen
+import org.fedorahosted.freeotp.ui.password.NbvcxzEvaluator
+import org.fedorahosted.freeotp.ui.password.PasswordScreen
+import org.fedorahosted.freeotp.ui.password.PasswordViewModel
 import org.fedorahosted.freeotp.ui.scan.hasCamera
 import org.fedorahosted.freeotp.ui.theme.FreeOTPTheme
 
 /**
- * The token list. Handles `otpauth://` VIEW intents and carries out the [MainEvent]s of
- * [MainViewModel] that need the activity: clipboard, device credential, documents and dialogs.
+ * The app's only activity, also started as `.PasswordActivity` (the launcher alias). Navigates
+ * between onboarding, master password, token list and manual entry; handles `otpauth://` VIEW
+ * intents; and carries out the [MainEvent]s of [MainViewModel] that need the activity:
+ * clipboard, device credential, documents and dialogs.
  */
 class Activity : ComponentActivity() {
     private val model: MainViewModel by viewModels { MainViewModel.factory(this) }
     private val dialogs: MainDialogsViewModel by viewModels()
     private var tokenBackup: TokenPersistence? = null
 
+    /** Tokens from VIEW intents, added once the token list shows (after provisioning, so they
+     *  are backed up). */
+    private val pendingUris = mutableStateListOf<Uri>()
+    private var navController: NavHostController? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        // The top bar is purple_500 (light icons) in the light theme and purple_200 (dark icons)
-        // in the dark one.
-        val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
-            Configuration.UI_MODE_NIGHT_YES
-        enableEdgeToEdge(
-            statusBarStyle = if (night) SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-            else SystemBarStyle.dark(Color.TRANSPARENT),
-        )
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         // Don't let other apps screenshot token codes...
@@ -88,19 +104,128 @@ class Activity : ComponentActivity() {
             dialogs.showRestore()
         }
 
-        // Only on the first start: a recreated activity has already added the token.
-        if (savedInstanceState == null) intent?.data?.let { model.addToken(it) }
+        if (savedInstanceState == null) {
+            intent?.data?.let { pendingUris += it }
+        } else {
+            // A recreated activity must not add the intent's token again, only unhandled ones.
+            BundleCompat.getParcelableArrayList(savedInstanceState, PENDING_URIS, Uri::class.java)
+                ?.let { pendingUris += it }
+        }
 
-        setContent { FreeOTPTheme { MainContent() } }
+        val start = if (tokenBackup?.isProvisioned == true) Route.TOKENS else Route.PASSWORD
+        val firstRun = savedInstanceState == null && start == Route.PASSWORD && !Onboarding.isCompleted(this)
+
+        setContent { FreeOTPTheme { Navigation(start, firstRun) } }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.let { model.addToken(it) }
+        val uri = intent.data ?: return
+        pendingUris += uri
+        // Back to the token list (a no-op before provisioning, when it isn't on the stack).
+        navController?.popBackStack(Route.TOKENS, inclusive = false)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putParcelableArrayList(PENDING_URIS, ArrayList(pendingUris))
     }
 
     @Composable
-    private fun MainContent() {
+    private fun Navigation(start: String, firstRun: Boolean) {
+        val nav = rememberNavController()
+        navController = nav
+
+        // Onboarding opens on top of the password screen, as before: Back skips it.
+        var onboardingShown by rememberSaveable { mutableStateOf(!firstRun) }
+        LaunchedEffect(Unit) {
+            if (!onboardingShown) {
+                onboardingShown = true
+                nav.navigate(Route.ONBOARDING)
+            }
+        }
+
+        NavHost(nav, startDestination = start) {
+            composable(Route.ONBOARDING) {
+                SystemBarIcons(onPrimary = false)
+                OnboardingScreen(onFinished = {
+                    Onboarding.setCompleted(this@Activity, true)
+                    nav.popBackStack()
+                })
+            }
+            composable(Route.PASSWORD) {
+                SystemBarIcons(onPrimary = false)
+                PasswordRoute(onProvisioned = {
+                    nav.navigate(Route.TOKENS) { popUpTo(Route.PASSWORD) { inclusive = true } }
+                })
+            }
+            composable(Route.TOKENS) {
+                SystemBarIcons(onPrimary = true)
+                MainContent(onManualAdd = { nav.navigate(Route.MANUAL_ADD) { launchSingleTop = true } })
+            }
+            composable(Route.MANUAL_ADD) {
+                SystemBarIcons(onPrimary = false)
+                ManualAddScreen(
+                    onAdd = { uri ->
+                        model.addToken(uri)
+                        nav.popBackStack()
+                    },
+                    onNavigateUp = { nav.popBackStack() },
+                )
+            }
+        }
+    }
+
+    /** Status bar icons that contrast with the top bar: the primary color or the surface. */
+    @Composable
+    private fun SystemBarIcons(onPrimary: Boolean) {
+        val dark = isSystemInDarkTheme()
+        LaunchedEffect(onPrimary, dark) {
+            // primary is purple_500 (light icons) in the light theme and purple_200 (dark icons)
+            // in the dark one; the surface is the other way round.
+            val lightIcons = onPrimary != dark
+            enableEdgeToEdge(
+                statusBarStyle = if (lightIcons) SystemBarStyle.dark(Color.TRANSPARENT)
+                else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+                navigationBarStyle = if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
+                else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            )
+        }
+    }
+
+    @Composable
+    private fun PasswordRoute(onProvisioned: () -> Unit) {
+        val backup = tokenBackup
+        val factory = remember {
+            viewModelFactory {
+                initializer {
+                    PasswordViewModel(
+                        evaluator = NbvcxzEvaluator { ConfigurationCompat.getLocales(resources.configuration)[0]!! },
+                        provision = { password ->
+                            checkNotNull(backup) { "Token storage unavailable" }.provision(password)
+                        },
+                    )
+                }
+            }
+        }
+        val password: PasswordViewModel = viewModel(factory = factory)
+        val state by password.state.collectAsStateWithLifecycle()
+        val currentOnProvisioned by rememberUpdatedState(onProvisioned)
+
+        LaunchedEffect(state.provisioned) {
+            if (state.provisioned) currentOnProvisioned()
+        }
+
+        PasswordScreen(
+            state = state,
+            onPasswordChange = password::onPasswordChange,
+            onConfirmChange = password::onConfirmChange,
+            onDone = password::onDone,
+        )
+    }
+
+    @Composable
+    private fun MainContent(onManualAdd: () -> Unit) {
         val state by model.state.collectAsStateWithLifecycle()
         val snackbar = remember { SnackbarHostState() }
         val grid = rememberLazyGridState()
@@ -125,9 +250,6 @@ class Activity : ComponentActivity() {
             pendingAuth = null
             if (it.resultCode == RESULT_OK && id != null) model.activate(id)
         }
-        val manualAdd = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == RESULT_OK) it.data?.data?.let { uri -> model.addToken(uri) }
-        }
         val saveBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/xml")) {
             uri ->
             val backup = tokenBackup
@@ -142,6 +264,10 @@ class Activity : ComponentActivity() {
                 backup.restoreBackupFromExternal(uri)
                 dialogs.showRestore()
             }
+        }
+
+        LaunchedEffect(pendingUris.size) {
+            while (pendingUris.isNotEmpty()) model.addToken(pendingUris.removeAt(0))
         }
 
         LaunchedEffect(Unit) {
@@ -183,7 +309,7 @@ class Activity : ComponentActivity() {
                 override fun onAddRandom() = model.addRandomToken()
                 override fun onBackup() = saveBackup.launch("externalBackup")
                 override fun onRestore() = openBackup.launch(arrayOf("*/*"))
-                override fun onManualAdd() = manualAdd.launch(Intent(this@Activity, ManualAdd::class.java))
+                override fun onManualAdd() = onManualAdd()
 
                 override fun onEdit() {
                     val token = model.state.value.firstSelected ?: return
@@ -239,5 +365,13 @@ class Activity : ComponentActivity() {
         const val LOGTAG = "Activity"
         const val BACKUP = "tokenBackup"
         const val RESTORED = "restoreComplete"
+        const val PENDING_URIS = "pendingUris"
+    }
+
+    private object Route {
+        const val ONBOARDING = "onboarding"
+        const val PASSWORD = "password"
+        const val TOKENS = "tokens"
+        const val MANUAL_ADD = "manualAdd"
     }
 }

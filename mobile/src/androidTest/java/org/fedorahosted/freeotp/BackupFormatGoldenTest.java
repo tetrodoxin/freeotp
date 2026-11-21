@@ -19,7 +19,6 @@ package org.fedorahosted.freeotp;
 import android.content.ContentResolver;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Looper;
 import android.util.Pair;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -29,8 +28,7 @@ import com.google.gson.Gson;
 
 import org.fedorahosted.freeotp.encryptor.EncryptedKey;
 import org.fedorahosted.freeotp.encryptor.MasterKey;
-import org.fedorahosted.freeotp.main.Adapter;
-import org.fedorahosted.freeotp.utils.SelectableAdapter;
+import org.fedorahosted.freeotp.data.TokenRepository;
 import org.fedorahosted.freeotp.utils.Time;
 import org.json.JSONObject;
 import org.junit.After;
@@ -48,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NavigableSet;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -74,12 +71,7 @@ import static org.junit.Assert.fail;
  * restore: fix the code, never regenerate the fixtures.
  */
 @RunWith(AndroidJUnit4.class)
-public class BackupFormatGoldenTest implements SelectableAdapter.EventListener {
-    static {
-        if (Looper.myLooper() == null)
-            Looper.prepare();
-    }
-
+public class BackupFormatGoldenTest {
     static final String PASSWORD = "G0lden-Backup-Passw0rd";
     static final long LAST_USED = 1700000000000L;
     /* Secret is Base32 of "12345678901234567890", the RFC 4226 / RFC 6238 SHA1 test secret. */
@@ -97,8 +89,6 @@ public class BackupFormatGoldenTest implements SelectableAdapter.EventListener {
     private JSONObject mPrefs;
     private SecretKey mMasterKey;
 
-    @Override
-    public void onSelectEvent(NavigableSet<Integer> selected) { }
 
     private static byte[] asset(String name) throws Exception {
         try (InputStream in = InstrumentationRegistry.getInstrumentation().getContext()
@@ -289,7 +279,7 @@ public class BackupFormatGoldenTest implements SelectableAdapter.EventListener {
     }
 
     @Test
-    public void restoredTokensGenerateCodesThroughAdapter() throws Exception {
+    public void restoredTokensGenerateCodesThroughRepository() throws Exception {
         Context ctx = contextWithResolver();
         SharedPreferences.Editor ed = ctx.getSharedPreferences("tokenBackup", 0).edit();
         for (Iterator<String> it = mPrefs.keys(); it.hasNext(); ) {
@@ -298,13 +288,13 @@ public class BackupFormatGoldenTest implements SelectableAdapter.EventListener {
         }
         ed.commit();
 
-        Adapter adapter = new Adapter(ctx, this);
-        adapter.restoreTokens(PASSWORD);
-        assertEquals(2, adapter.getItemCount());
+        TokenRepository repository = new TokenRepository(ctx);
+        repository.restore(PASSWORD);
+        assertEquals(2, repository.getSize());
 
         List<String> codes = new ArrayList<>();
-        for (int i = 0; i < adapter.getItemCount(); i++)
-            codes.add(adapter.getCode(i).getCode());
+        for (int i = 0; i < repository.getSize(); i++)
+            codes.add(repository.getCode(repository.idAt(i)).getCode());
         codes.sort(null);
         assertEquals(Arrays.asList("287082", "94287082"), codes);
     }

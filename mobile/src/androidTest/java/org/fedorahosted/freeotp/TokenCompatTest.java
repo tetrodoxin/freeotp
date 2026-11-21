@@ -3,15 +3,13 @@ package org.fedorahosted.freeotp;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Looper;
 import android.security.keystore.UserNotAuthenticatedException;
 import android.util.Pair;
 
 import junit.framework.TestCase;
 
 import org.apache.commons.codec.binary.Base32;
-import org.fedorahosted.freeotp.main.Adapter;
-import org.fedorahosted.freeotp.utils.SelectableAdapter;
+import org.fedorahosted.freeotp.data.TokenRepository;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,17 +24,12 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.NavigableSet;
 import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
 @RunWith(Parameterized.class)
-public class TokenCompatTest extends TestCase implements SelectableAdapter.EventListener {
-    static {
-        Looper.prepare();
-    }
-
+public class TokenCompatTest extends TestCase {
     private enum Layout { NONE, PATH, PARAM, BOTH };
 
     private static final Layout[] LAYOUT = { Layout.PARAM, Layout.NONE, Layout.PATH, Layout.BOTH };
@@ -231,7 +224,7 @@ public class TokenCompatTest extends TestCase implements SelectableAdapter.Event
             .putString("foo", makeUri().toString())
             .commit();
 
-        Adapter a = new Adapter(mContext, this);
+        TokenRepository a = new TokenRepository(mContext);
 
         // Ensure the migration happened.
         assertEquals(0, old.getAll().size());
@@ -273,7 +266,7 @@ public class TokenCompatTest extends TestCase implements SelectableAdapter.Event
             .putString("foo", makeJson().toString())
             .commit();
 
-        Adapter a = new Adapter(mContext, this);
+        TokenRepository a = new TokenRepository(mContext);
 
         // Ensure the migration happened.
         assertEquals(0, old.getAll().size());
@@ -322,7 +315,7 @@ public class TokenCompatTest extends TestCase implements SelectableAdapter.Event
                 .commit();
 
         tokenBackup.provision(pwd);
-        Adapter a = new Adapter(mContext, this);
+        TokenRepository a = new TokenRepository(mContext);
 
         // Backup stores masterKey and token data
         assertEquals(3, bkp.getAll().size());
@@ -335,8 +328,8 @@ public class TokenCompatTest extends TestCase implements SelectableAdapter.Event
         assertEquals(0, cur.getAll().size());
 
         // Perform restore
-        Adapter a2 = new Adapter(mContext, this);
-        a2.restoreTokens(pwd);
+        TokenRepository a2 = new TokenRepository(mContext);
+        a2.restore(pwd);
 
         // Make sure tokenOrder is well formed.
         JSONArray order = new JSONArray(cur.getString("tokenOrder", null));
@@ -361,8 +354,4 @@ public class TokenCompatTest extends TestCase implements SelectableAdapter.Event
         }
     }
 
-    @Override
-    public void onSelectEvent(NavigableSet<Integer> selected) {
-
-    }
 }

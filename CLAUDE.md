@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a single Gradle module (`:mobile`) written in Java, package `org.fedorahosted.freeotp`, using view binding. It is being migrated to Kotlin + Compose (see below). The build uses Gradle 9 / AGP 9 (built-in Kotlin) with Kotlin DSL scripts and a version catalog in `gradle/libs.versions.toml`.
+FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a single Gradle module (`:mobile`), package `org.fedorahosted.freeotp`: a single-activity Jetpack Compose (Material 3) UI in Kotlin over a crypto/persistence core that is still Java (see the migration section below). The build uses Gradle 9 / AGP 9 (built-in Kotlin) with Kotlin DSL scripts and a version catalog in `gradle/libs.versions.toml`.
 
 ## Commands
 
@@ -28,7 +28,7 @@ CI (`.github/workflows/build.yml`) runs the instrumented tests on emulators at A
 Secrets are never stored in plaintext. Three layers interact, and you need to know all of them before touching tokens, backup or restore:
 
 1. **AndroidKeyStore**: each token's HMAC secret is imported under the token's UUID alias, and code generation uses that non-extractable key. A `masterKey` alias holds an AES/GCM **encrypt-only** key.
-2. **`tokenStore` SharedPreferences** (`data/TokenRepository.kt`): token metadata as Gson JSON keyed by UUID, plus a `tokenOrder` UUID list. `TokenRepository` is UUID-keyed: it adds, deletes and reorders tokens, generates codes (`getCode`), restores backups and migrates legacy pre-2.0 tokens from the old `tokens` prefs (`compat()` / `Token.compat`). Use one instance per process: `MainViewModel` owns it and calls it from a single background thread. (The legacy `main/Adapter` wraps its own instance; only tests still use it.)
+2. **`tokenStore` SharedPreferences** (`data/TokenRepository.kt`): token metadata as Gson JSON keyed by UUID, plus a `tokenOrder` UUID list. `TokenRepository` is UUID-keyed: it adds, deletes and reorders tokens, generates codes (`getCode`), restores backups and migrates legacy pre-2.0 tokens from the old `tokens` prefs (`compat()` / `Token.compat`). Use one instance per process: `MainViewModel` owns it and calls it from a single background thread.
 3. **`tokenBackup` SharedPreferences** (`TokenPersistence`): for each token, `<uuid>` → JSON `{key: EncryptedKey}` (the secret encrypted under the master key) and `<uuid>-token` → serialized token metadata, plus `masterKey` → a Gson-serialized `MasterKey`.
 
 `encryptor/`:
@@ -42,10 +42,8 @@ Backup paths (see `BACKUP.md`): Android Auto Backup of the `tokenBackup` prefs v
 
 ### App flow
 
-- `PasswordActivity` (Kotlin/Compose, `ui/password/`) is the launcher. It provisions the master password on first run (strength checked with nbvcxz in `PasswordViewModel`) and then hands off to `main.Activity`.
-- `main.Activity` (Kotlin/Compose, `ui/main/`) shows the token grid (`MainScreen`, `TokenCard`), handles `otpauth://totp|hotp` VIEW intents, backup/restore documents and the device-credential prompt. State lives in `MainViewModel` (tokens, selection by UUID, shown codes, settings); one-shot effects are `MainEvent`s. All dialogs are Compose (`ui/dialogs/`, `MainDialogsViewModel` + `MainDialogHost`). QR scanning is the Compose `ScanDialog` (`ui/scan/`, CameraX `PreviewView` + ZXing).
-- `OnBoardingActivity` (Kotlin/Compose, `ui/onboarding/`) shows the first-run introduction; completion is stored as `onBoardingComplete` in the default shared preferences.
-- `ManualAdd` (Kotlin/Compose, `ui/manualadd/`) returns the entered token as an `otpauth://` URI result; `ManualAddForm.toUri()` builds it.
+- `main.Activity` is the only activity. The launcher entry is an `<activity-alias>` named `.PasswordActivity` (the old launcher's component name, kept for home-screen shortcuts); the `otpauth://totp|hotp` VIEW filter is on `main.Activity`. It hosts a Navigation Compose `NavHost` with string routes: `password` (start until the master password is provisioned; `ui/password/`, strength checked with nbvcxz in `PasswordViewModel`), `onboarding` (first run, opened on top of `password`; `ui/onboarding/`, completion stored as `onBoardingComplete` in the default shared preferences via `Onboarding`), `tokens` and `manualAdd` (`ui/manualadd/`, `ManualAddForm.toUri()` builds the `otpauth://` URI). Tokens from VIEW intents wait in a pending list until the `tokens` route shows, so they are added after provisioning and get backed up.
+- The `tokens` route (`ui/main/`) shows the token grid (`MainScreen`, `TokenCard`) and handles backup/restore documents and the device-credential prompt. State lives in the activity-scoped `MainViewModel` (tokens, selection by UUID, shown codes, settings); one-shot effects are `MainEvent`s. All dialogs are Compose (`ui/dialogs/`, `MainDialogsViewModel` + `MainDialogHost`). QR scanning is the Compose `ScanDialog` (`ui/scan/`, CameraX `PreviewView` + ZXing).
 - Sharing a code: the Compose `ShareSheet` (`ui/share/`) lists the `ShareTarget`s of the `Discoverable` implementations in `main/share/` (`Clipboard`, and `Jelling`, which shares over Bluetooth LE GATT).
 
 ### Token model
@@ -62,13 +60,14 @@ The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Co
 ## Conventions
 
 - Commit messages: a title under 50 characters, a blank line, then an optional body with lines under 100 characters, then optional footer lines (e.g. `Fixes #<n>`, one per issue). Squash small changes into one commit. UI changes should come with screenshots of the new or changed screens.
-- User-visible strings go in `res/values/strings.xml`. There are many translated `values-*` locales, and `generateLocaleConfig` is on. Toast-like messages go through `utils/UserNotifier`.
+- User-visible strings go in `res/values/strings.xml`. There are many translated `values-*` locales, and `generateLocaleConfig` is on. Toast-like messages are snackbars (`SnackbarHostState`) in the Compose screens.
 - Resource IDs are not `final` (AGP 9), so don't `switch` on `R.id.*`; use `if` chains.
-- Edge-to-edge inset handling for targetSdk 35+ is centralized in `utils/SystemBarInsets`.
+- Edge-to-edge: `main.Activity` calls `enableEdgeToEdge()`, and each route sets the status bar icon style to contrast with its top bar; screens handle insets with `Scaffold` / `WindowInsets`. The XML theme (`res/values*/themes.xml`) is only a platform window theme; all styling is `FreeOTPTheme`.
+- The whole activity is `FLAG_SECURE` (no screenshots or recents previews). For local screenshots, comment out the flag in a throwaway build and never commit that.
 - Store listing metadata lives in `fastlane/metadata/android`.
 
-## Ongoing migration to Kotlin + Compose
+## Migration to Kotlin + Compose
 
-The app is being migrated to Kotlin and Jetpack Compose (Material 3) in phases. `MIGRATION.md` holds the decisions, guardrails, phase checklist and status. Read it before touching UI code, and tick off items there as they land. Until the migration is done, parts of the descriptions above (view binding, `UserNotifier`, `SystemBarInsets`) describe the old code; `Adapter`, `ViewHolder` and their layouts are unused leftovers until Phase 5. Compose screens live in `ui/<screen>/` (Compose UI tests in the matching `androidTest` package, which `-PtestMinified` skips); their activities are thin `ComponentActivity` wrappers that call `enableEdgeToEdge()`, and activities with text input need `android:windowSoftInputMode="adjustResize"` so `imePadding()` works. Two rules matter most:
+The app was migrated to Kotlin and Jetpack Compose (Material 3) in phases; `MIGRATION.md` holds the decisions, guardrails and the checklist (Phase 6, converting the Java core, is optional). Compose screens live in `ui/<screen>/`, with Compose UI tests in the matching `androidTest` package (which `-PtestMinified` skips). Two rules matter most:
 - Never change field names or types of the Gson-persisted classes (`Token`, `MasterKey`, `EncryptedKey`). `BackupFormatGoldenTest` guards the backup format: never regenerate its fixtures to make it pass. After touching these classes or `proguard-rules.pro`, also run the tests with `-PtestMinified`.
-- New UI code is Kotlin + Compose; don't add new XML layouts or Java UI classes.
+- UI code is Kotlin + Compose; don't add XML layouts, view binding or Java UI classes.

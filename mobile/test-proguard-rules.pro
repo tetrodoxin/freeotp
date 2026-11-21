@@ -5,6 +5,8 @@
 -keep class org.fedorahosted.freeotp.** { *; }
 -dontwarn com.sun.jna.**
 -dontwarn edu.umd.cs.findbugs.annotations.**
+# Compile-only annotations used by androidx.test.
+-dontwarn com.google.errorprone.annotations.**
 -dontwarn java.lang.**
 -dontwarn org.mockito.**
 -dontwarn org.opentest4j.**

@@ -2,18 +2,15 @@ package org.fedorahosted.freeotp;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 import android.util.Log;
 import android.util.Pair;
 
 import junit.framework.TestCase;
 
-import org.fedorahosted.freeotp.main.Adapter;
-import org.fedorahosted.freeotp.utils.SelectableAdapter;
+import org.fedorahosted.freeotp.data.TokenRepository;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -27,7 +24,6 @@ import java.security.KeyStore;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.UUID;
 
 import javax.crypto.SecretKey;
@@ -37,7 +33,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TokenAdapterTest extends TestCase implements SelectableAdapter.EventListener {
+public class TokenStoreTest extends TestCase {
     private static final String HOTP = "otpauth://hotp/foo:bar?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
 
     @Mock
@@ -54,15 +50,7 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
         return mockStore.get("tokenStore").getAll().size();
     }
 
-    public TokenAdapterTest() throws Token.InvalidUriException {
-    }
-
-    @BeforeClass
-    public static void setupOnce() {
-        // Instrumented tests are launched in a dedicated instrumentation thread that does not prepare an Android Looper.
-        // But it is mandatory here as Adapter will instantiate an Android Handler.
-        if (Looper.myLooper() == null)
-            Looper.prepare();
+    public TokenStoreTest() throws Token.InvalidUriException {
     }
 
     @Before
@@ -79,7 +67,7 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
             });
     }
 
-    private Pair<KeyStore, Adapter> reset() throws GeneralSecurityException, IOException {
+    private Pair<KeyStore, TokenRepository> reset() throws GeneralSecurityException, IOException {
         KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
         ks.load(null);
 
@@ -94,12 +82,12 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
         mockContext.getSharedPreferences("tokenStore", Context.MODE_PRIVATE)
                 .edit().putString("tokenOrder", array.toString()).commit();
 
-        return new Pair<>(ks, new Adapter(mockContext, this));
+        return new Pair<>(ks, new TokenRepository(mockContext));
     }
 
     @Test
     public void addToken() throws GeneralSecurityException, IOException, JSONException {
-        Pair<KeyStore, Adapter> state = reset();
+        Pair<KeyStore, TokenRepository> state = reset();
 
         Log.e(getClass().getCanonicalName(), getItem("tokenOrder"));
 
@@ -124,7 +112,7 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
 
     @Test
     public void deleteToken() throws GeneralSecurityException, IOException, JSONException {
-        Pair<KeyStore, Adapter> state = reset();
+        Pair<KeyStore, TokenRepository> state = reset();
 
         Log.e(getClass().getCanonicalName(), getItem("tokenOrder"));
 
@@ -136,7 +124,7 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
         assertEquals(prev, next);
 
         assertEquals(2, getSize());
-        state.second.delete(state.second.getItemCount() - 1);
+        state.second.delete(state.second.idAt(state.second.getSize() - 1));
         assertEquals(1, getSize());
         assertEquals(prev, new JSONArray(getItem("tokenOrder")));
 
@@ -147,7 +135,7 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
 
     @Test
     public void moveToken() throws GeneralSecurityException, IOException, JSONException {
-        Pair<KeyStore, Adapter> state = reset();
+        Pair<KeyStore, TokenRepository> state = reset();
 
         Log.e(getClass().getCanonicalName(), getItem("tokenOrder"));
 
@@ -169,7 +157,7 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
 
     @Test
     public void moveTokenSame() throws GeneralSecurityException, IOException, JSONException {
-        Pair<KeyStore, Adapter> state = reset();
+        Pair<KeyStore, TokenRepository> state = reset();
 
         Log.e(getClass().getCanonicalName(), getItem("tokenOrder"));
 
@@ -184,8 +172,4 @@ public class TokenAdapterTest extends TestCase implements SelectableAdapter.Even
         assertEquals(prev, new JSONArray(getItem("tokenOrder")));
     }
 
-    @Override
-    public void onSelectEvent(NavigableSet<Integer> selected) {
-
-    }
 }

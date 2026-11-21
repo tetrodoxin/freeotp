@@ -174,11 +174,26 @@ These hold for every phase:
 
 ### Phase 5: Cleanup and single activity
 
-- [ ] Single activity with Navigation Compose (password → onboarding → main → manual add / scan);
-      launcher and VIEW intent keep working
-- [ ] Remove layouts, view binding, `SelectableAdapter`, `GridLayoutItemDecoration`,
-      `SystemBarInsets` and unused Material Components resources
-- [ ] Replace the screenshots in `screenshots/` (used by README.md) with the Material 3 UI
+- [x] Single activity with Navigation Compose (password → onboarding → main → manual add / scan);
+      launcher and VIEW intent keep working. `main.Activity` hosts a `NavHost` with string
+      routes (no serialization plugin for four routes); scan stays a dialog of the token list.
+      The launcher is an `<activity-alias>` named `.PasswordActivity`, so home-screen shortcuts
+      to the old launcher component keep working. Navigation is pinned to 2.9.x: 2.10 needs
+      minSdk 24
+- [x] Remove layouts, view binding, `SelectableAdapter`, `GridLayoutItemDecoration`,
+      `SystemBarInsets` and unused Material Components resources. Also gone: `Adapter`,
+      `ViewHolder`, `UserNotifier`, `TokenImages`, the AppCompat, Material Components and
+      ConstraintLayout dependencies (the window theme is a platform `Theme.Material` now) and the
+      API 35 edge-to-edge opt-out. The storage tests use `TokenRepository` directly
+      (`TokenAdapterTest` is `TokenStoreTest`); release APK 4.7 MB → 4.1 MB
+- [x] Replace the screenshots in `screenshots/` (used by README.md) with the Material 3 UI; the
+      fastlane phone screenshots are the same files
+- Behavior changes:
+  - Tokens from VIEW intents are added once the token list shows. Before provisioning, the link
+    used to bypass the password screen and the token was never backed up; now the password
+    comes first and the token is backed up. A link that arrives while manual entry is open
+    returns to the list, as the old `singleTask` activity did
+  - `FLAG_SECURE` now covers every screen, including onboarding and the password screen
 
 ### Phase 6 (optional): Core to Kotlin
 
@@ -188,5 +203,5 @@ These hold for every phase:
 
 ## Status
 
-Phases 0–3 done and merged into `master`. Phase 4 done on branch `compose/phase-4`. Next: Phase 5
-(cleanup and single activity).
+Phases 0–4 done and merged into `master`. Phase 5 done on branch `compose/phase-5`. The migration
+is complete; Phase 6 (core to Kotlin) is optional.

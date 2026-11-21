@@ -12,7 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.security.KeyStore
 
-/** UUID-based operations of [TokenRepository]; storage-level coverage is in [TokenAdapterTest]. */
+/** UUID-based operations of [TokenRepository]; storage-level coverage is in [TokenStoreTest]. */
 @RunWith(AndroidJUnit4::class)
 class TokenRepositoryTest {
     private lateinit var context: Context
