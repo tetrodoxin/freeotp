@@ -112,8 +112,17 @@ These hold for every phase:
       Fixed on the way: a failed legacy migration undid the wrong token (position 0 instead of
       the one just added), and a failing `TokenPersistence` init crashed add/delete/restore
       with an NPE instead of skipping the backup mirror
-- [ ] `MainViewModel`: token list, selection as a set of UUIDs (not positions), settings
-      (auto-copy, sort by MRU)
+- [x] `MainViewModel`: token list, selection as a set of UUIDs (not positions), settings
+      (auto-copy, sort by MRU) (`ui/main/`, `MainViewModelTest`). It owns the one
+      `TokenRepository` and runs every call to it on a single background thread, including
+      opening it and restoring (PBKDF2 is off the main thread now). Shown codes and their expiry
+      live in the state; side effects (clipboard, device credential, dialogs, scrolling) are
+      `MainEvent`s. Not wired up yet: the View-based screen still uses `Adapter` until the
+      Compose grid replaces it, and from then on there must be only one `TokenRepository`
+- Restore fix: `TokenPersistence.needsRestore` compared UUIDs with `==` and so never skipped
+  anything on a device; it is removed. A token whose keystore key was lost gets it back on
+  restore and keeps its place instead of being listed twice (which would crash a keyed
+  `LazyVerticalGrid`)
 - [ ] Compose token grid: `LazyVerticalGrid` with stable UUID keys and item animations; token card
       with countdown, active/passive transition and selection animation
 - [ ] `Scaffold`: top bar with selection mode (edit, move up/down, delete) and overflow menu
@@ -147,5 +156,5 @@ These hold for every phase:
 ## Status
 
 Phases 0–2 done and merged into `master`. Phase 3 in progress on branch `compose/phase-3`:
-`TokenRepository` extracted; next is `MainViewModel` (which also moves restore/PBKDF2 off the
-main thread).
+`TokenRepository` and `MainViewModel` done; next is the Compose token grid with the `Scaffold`,
+which wires up the ViewModel and removes `Adapter`.

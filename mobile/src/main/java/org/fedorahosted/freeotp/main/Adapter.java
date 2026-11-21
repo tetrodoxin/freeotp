@@ -144,8 +144,11 @@ public class Adapter extends SelectableAdapter<ViewHolder> implements ViewHolder
     public void restoreTokens(String pwd) throws TokenPersistence.BadPasswordException {
         int start = mRepository.getSize();
         List<String> restored = mRepository.restore(pwd);
-        if (!restored.isEmpty())
-            notifyItemRangeInserted(start, restored.size());
+        int inserted = mRepository.getSize() - start;
+        if (restored.size() > inserted)
+            notifyItemRangeChanged(0, start);
+        if (inserted > 0)
+            notifyItemRangeInserted(start, inserted);
     }
 
     public Code getCode(int position)

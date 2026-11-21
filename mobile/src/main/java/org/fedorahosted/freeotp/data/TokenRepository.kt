@@ -60,8 +60,10 @@ class TokenRepository @Throws(GeneralSecurityException::class, IOException::clas
     @Throws(GeneralSecurityException::class, IOException::class)
     fun add(key: SecretKey, token: Token): String = add(key, token, lock = true, uuid = null)
 
+    /** Appends a token, or replaces it in place if [uuid] is already listed. */
     private fun add(key: SecretKey, token: Token, lock: Boolean, uuid: String?): String {
         val id = uuid ?: UUID.randomUUID().toString()
+        val listed = id in order
         Log.i(LOGTAG, "Adding token uuid [$id]")
 
         keyStore.setEntry(
@@ -72,10 +74,12 @@ class TokenRepository @Throws(GeneralSecurityException::class, IOException::clas
                 .build(),
         )
 
-        order.add(id)
+        if (!listed) order.add(id)
         if (!storeOrder().putString(id, token.serialize()).commit()) {
-            order.removeAt(order.size - 1)
-            keyStore.deleteEntry(id)
+            if (!listed) {
+                order.removeAt(order.size - 1)
+                keyStore.deleteEntry(id)
+            }
             throw IOException()
         }
 
@@ -186,7 +190,8 @@ class TokenRepository @Throws(GeneralSecurityException::class, IOException::clas
     /**
      * Restores all tokens from the `tokenBackup` prefs, appending them in backup order under
      * their original UUIDs. Runs PBKDF2, so it is slow. Returns the restored UUIDs; tokens that
-     * fail to restore are logged and skipped.
+     * fail to restore are logged and skipped. A restored UUID that is still listed (its keystore
+     * key was lost) gets its key back and keeps its position instead of being listed twice.
      */
     @Throws(TokenPersistence.BadPasswordException::class)
     fun restore(password: String): List<String> {

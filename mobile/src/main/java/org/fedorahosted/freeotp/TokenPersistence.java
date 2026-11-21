@@ -57,18 +57,15 @@ public class TokenPersistence {
 
     private static final String LOGTAG = "TokenPersistence";
     private static final String BACKUP = "tokenBackup";
-    private static final String STORE = "tokenStore";
     private static final String MASTER = "masterKey";
 
     private final SharedPreferences mBackups;
-    private final SharedPreferences mTokens;
     private final Context mContext;
     private final KeyStore mKeyStore;
 
     public TokenPersistence(Context ctx)
             throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         mBackups = ctx.getSharedPreferences(BACKUP, MODE_PRIVATE);
-        mTokens = ctx.getSharedPreferences(STORE, MODE_PRIVATE);
         mContext = ctx;
 
         mKeyStore = KeyStore.getInstance("AndroidKeyStore");
@@ -97,19 +94,6 @@ public class TokenPersistence {
 
         // Store the ciphertext of the master key in the user preferences.
         return mBackups.edit().putString(MASTER, new Gson().toJson(mk)).commit();
-    }
-
-    private boolean needsRestore(String restore_uuid) {
-        for (String key : mTokens.getAll().keySet()) {
-            if (key == null)
-                continue;
-
-            if (key == restore_uuid) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     // Save backup data to SharedPreferences
@@ -178,7 +162,7 @@ public class TokenPersistence {
             RestoredData bkp = new RestoredData();
 
             Log.i(LOGTAG, String.format("Found [%s] in backup", uuid));
-            if (uuid.equals(MASTER) || !needsRestore(uuid) || item.getKey().contains("-token")) {
+            if (uuid.equals(MASTER) || item.getKey().contains("-token")) {
                 Log.i(LOGTAG, String.format("Skipping [%s]", uuid));
                 continue;
             }
@@ -188,6 +172,8 @@ public class TokenPersistence {
                 continue;
             }
 
+            // Tokens with a key are intact. A listed token without one lost its key (e.g. the
+            // keystore was wiped) and is restored in place by TokenRepository.
             Key key = mKeyStore.getKey(uuid, null);
             if (key != null) {
                 Log.i(LOGTAG, String.format("Existing token [%s]! Skipping", uuid));
