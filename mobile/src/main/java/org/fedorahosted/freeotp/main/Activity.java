@@ -57,6 +57,8 @@ import org.fedorahosted.freeotp.R;
 import org.fedorahosted.freeotp.Token;
 import org.fedorahosted.freeotp.TokenPersistence;
 import org.fedorahosted.freeotp.main.share.ShareFragment;
+import org.fedorahosted.freeotp.ui.dialogs.MainDialogListener;
+import org.fedorahosted.freeotp.ui.dialogs.MainDialogsViewModel;
 import org.fedorahosted.freeotp.utils.GridLayoutItemDecoration;
 import org.fedorahosted.freeotp.utils.SelectableAdapter;
 import org.fedorahosted.freeotp.utils.SystemBarInsets;
@@ -84,7 +86,8 @@ import androidx.core.text.HtmlCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class Activity extends AppCompatActivity
-    implements SelectableAdapter.EventListener, View.OnClickListener, View.OnLongClickListener {
+    implements SelectableAdapter.EventListener, View.OnClickListener, View.OnLongClickListener,
+    MainDialogListener {
     private static final String LOGTAG = "Activity";
 
     private List<WeakReference<ViewHolder>> mViewHolders = new LinkedList<>();
@@ -102,7 +105,7 @@ public class Activity extends AppCompatActivity
     ActivityResultLauncher<Intent> mManualAddLauncher;
     ActivityResultLauncher<Intent> mBackupSaveLauncher;
     ActivityResultLauncher<Intent> mRestoreSaveLauncher;
-    private String mRestorePwd = "";
+    private MainDialogsViewModel mDialogs;
     private SharedPreferences mBackups;
     private TokenPersistence mTokenBackup;
     static final String BACKUP = "tokenBackup";
@@ -237,6 +240,7 @@ public class Activity extends AppCompatActivity
         SystemBarInsets.apply(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        mDialogs = MainDialogsViewModel.install(this, this);
 
         // Don't let other apps screenshot token codes...
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
@@ -316,22 +320,6 @@ public class Activity extends AppCompatActivity
         mTokenAdapter.registerAdapterDataObserver(mAdapterDataObserver);
         mAdapterDataObserver.onChanged();
 
-        /* EditTokenDialogFragment listener */
-        getSupportFragmentManager().setFragmentResultListener("requestKey", this, (requestKey, bundle) -> {
-            String account = bundle.getString("account");
-            String issuer = bundle.getString("issuer");
-
-            int selected = mTokenAdapter.getSelected().first();
-
-            try {
-                mTokenAdapter.setLabel(selected, account, issuer);
-                mTokenAdapter.notifyItemChanged(selected);
-            } catch (IOException e) {
-                Log.e(LOGTAG, "Exception", e);
-            }
-            // ensure viewholder in recyclerview is refreshed
-        });
-
         if (mBackups.getBoolean(RESTORED, false)) {
             mBackups.edit().remove(RESTORED).apply();
             showRestoreAlert();
@@ -376,44 +364,30 @@ public class Activity extends AppCompatActivity
         return true;
     }
 
-    private void showRestoreCancelAlert() {
-        RestoreCancelDialogFragment cancelDialog = RestoreCancelDialogFragment.newInstance();
-        cancelDialog.setListener(new RestoreCancelDialogFragment.RestoreCancelDialogListener() {
-            @Override
-            public void onGoBack() {
-                showRestoreAlert();
-            }
-
-            @Override
-            public void onProceed() {
-                // User chose to proceed without restoring
-            }
-        });
-        cancelDialog.show(getSupportFragmentManager(), "restore_cancel");
+    private void showRestoreAlert() {
+        mDialogs.showRestore();
     }
 
-    private void showRestoreAlert() {
-        RestoreDialogFragment restoreDialog = RestoreDialogFragment.newInstance();
-        restoreDialog.setListener(new RestoreDialogFragment.RestoreDialogListener() {
-            @Override
-            public void onRestorePassword(String password) {
-                mRestorePwd = password;
+    @Override
+    public void onRestorePassword(String password) {
+        try {
+            mTokenAdapter.restoreTokens(password);
+            mDialogs.dismiss();
+        } catch (TokenPersistence.BadPasswordException e) {
+            mDialogs.restoreFailed();
+        }
+    }
 
-                try {
-                    mTokenAdapter.restoreTokens(mRestorePwd);
-                    restoreDialog.dismiss();
-                } catch (TokenPersistence.BadPasswordException e) {
-                    restoreDialog.showBadPasswordError();
-                }
-            }
+    @Override
+    public void onEditTokenSave(String account, String issuer) {
+        int selected = mTokenAdapter.getSelected().first();
 
-            @Override
-            public void onRestoreCancel() {
-                restoreDialog.dismiss();
-                showRestoreCancelAlert();
-            }
-        });
-        restoreDialog.show(getSupportFragmentManager(), "restore");
+        try {
+            mTokenAdapter.setLabel(selected, account, issuer);
+            mTokenAdapter.notifyItemChanged(selected);
+        } catch (IOException e) {
+            Log.e(LOGTAG, "Exception", e);
+        }
     }
 
     @Override
@@ -460,9 +434,7 @@ public class Activity extends AppCompatActivity
             Pair<Integer, String> image = token_icon.mImage;
             int color = token_icon.mColor;
 
-            EditTokenDialogFragment edit = EditTokenDialogFragment.newInstance(label.first,
-                    label.second, image.first, image.second, color);
-            edit.show(getSupportFragmentManager(), edit.getTag());
+            mDialogs.showEditToken(label.first, label.second, image.first, image.second, color);
 
             return true;
         } else if (id == R.id.action_up) {
