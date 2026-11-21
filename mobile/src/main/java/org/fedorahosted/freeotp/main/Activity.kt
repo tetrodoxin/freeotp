@@ -19,7 +19,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,13 +48,14 @@ import org.fedorahosted.freeotp.ui.main.MainActions
 import org.fedorahosted.freeotp.ui.main.MainEvent
 import org.fedorahosted.freeotp.ui.main.MainScreen
 import org.fedorahosted.freeotp.ui.main.MainViewModel
+import org.fedorahosted.freeotp.ui.scan.hasCamera
 import org.fedorahosted.freeotp.ui.theme.FreeOTPTheme
 
 /**
  * The token list. Handles `otpauth://` VIEW intents and carries out the [MainEvent]s of
  * [MainViewModel] that need the activity: clipboard, device credential, documents and dialogs.
  */
-class Activity : AppCompatActivity() {
+class Activity : ComponentActivity() {
     private val model: MainViewModel by viewModels { MainViewModel.factory(this) }
     private val dialogs: MainDialogsViewModel by viewModels()
     private var tokenBackup: TokenPersistence? = null
@@ -97,16 +99,13 @@ class Activity : AppCompatActivity() {
         intent.data?.let { model.addToken(it) }
     }
 
-    /** Adds a scanned token; called by [ScanDialogFragment]. */
-    fun addToken(uri: Uri, enableSecurity: Boolean) = model.addToken(uri, enableSecurity)
-
     @Composable
     private fun MainContent() {
         val state by model.state.collectAsStateWithLifecycle()
         val snackbar = remember { SnackbarHostState() }
         val grid = rememberLazyGridState()
         val scope = rememberCoroutineScope()
-        val hasCamera = remember { ScanDialogFragment.hasCamera(applicationContext) }
+        val hasCamera = remember { hasCamera(applicationContext) }
 
         fun notify(message: String) {
             scope.launch {
@@ -204,9 +203,7 @@ class Activity : AppCompatActivity() {
                     notifyToggle(R.string.sort_by_recent_use_toast, model.state.value.sortByMru)
                 }
 
-                override fun onScan() {
-                    ScanDialogFragment().show(supportFragmentManager, null)
-                }
+                override fun onScan() = dialogs.show(MainDialog.Scan)
             }
         }
 
@@ -219,6 +216,7 @@ class Activity : AppCompatActivity() {
                 override fun onDeleteConfirmed() = model.deleteSelected()
                 override fun onAddUnsafe(uri: Uri) = model.addToken(uri, safe = false)
                 override fun onEnableLockScreen() = startActivity(Intent(DevicePolicyManager.ACTION_SET_NEW_PASSWORD))
+                override fun onScanned(uri: String) = model.addToken(uri.toUri())
             }
         }
 

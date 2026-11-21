@@ -157,16 +157,27 @@ These hold for every phase:
 
 ### Phase 4: QR scanning
 
-- [ ] `ScanDialogFragment` → Compose screen; CameraX `PreviewView` in `AndroidView` (or the
+- [x] `ScanDialogFragment` → Compose screen; CameraX `PreviewView` in `AndroidView` (or the
       `camera-compose` viewfinder), ZXing analyzer unchanged, permission request via
-      `rememberLauncherForActivityResult`
+      `rememberLauncherForActivityResult`. `ui/scan/ScanDialog.kt` is a square dialog
+      (`MainDialog.Scan`) with a `PreviewView` (TextureView mode) bound to the activity
+      lifecycle; decoding (`ui/scan/QrCodes.kt`) is still ZXing, same hints. Covered by
+      `QrCodesTest` (round trip through the decoder) and `ScanDialogTest` (fake camera)
+- Fixed on the way: a code could be reported more than once (frames kept being decoded until
+  the camera stop, posted to the UI thread, ran), so a token could be added twice; the decoder
+  ignored the Y plane's row stride, which skews the image on cameras that pad rows; a frame
+  whose decoding threw anything but `NotFoundException` was never closed
+- `main.Activity` is a `ComponentActivity` now (no fragments left). `SquareFrameLayout` and
+  `fragment_scan.xml` are gone
+- Not verified on a real camera: the emulator's camera only delivers black frames (the old
+  scanner shows the same), so the live path was checked up to frames reaching the analyzer
 
 ### Phase 5: Cleanup and single activity
 
 - [ ] Single activity with Navigation Compose (password → onboarding → main → manual add / scan);
       launcher and VIEW intent keep working
 - [ ] Remove layouts, view binding, `SelectableAdapter`, `GridLayoutItemDecoration`,
-      `SquareFrameLayout`, `SystemBarInsets` and unused Material Components resources
+      `SystemBarInsets` and unused Material Components resources
 - [ ] Replace the screenshots in `screenshots/` (used by README.md) with the Material 3 UI
 
 ### Phase 6 (optional): Core to Kotlin
@@ -177,5 +188,5 @@ These hold for every phase:
 
 ## Status
 
-Phases 0–2 done and merged into `master`. Phase 3 done on branch `compose/phase-3`. Next: Phase 4
-(QR scanning).
+Phases 0–3 done and merged into `master`. Phase 4 done on branch `compose/phase-4`. Next: Phase 5
+(cleanup and single activity).

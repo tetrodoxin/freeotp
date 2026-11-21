@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.fedorahosted.freeotp.R
+import org.fedorahosted.freeotp.ui.scan.ScanDialog
 import org.fedorahosted.freeotp.ui.share.ShareSheet
 
 /** The dialog currently shown over the main screen, if any. */
@@ -47,6 +48,8 @@ sealed interface MainDialog {
     data object KeyInvalidated : MainDialog
 
     data object About : MainDialog
+
+    data object Scan : MainDialog
 }
 
 /** Callbacks of the main screen's dialogs that act on tokens or leave the app. */
@@ -56,6 +59,7 @@ interface MainDialogListener {
     fun onDeleteConfirmed() {}
     fun onAddUnsafe(uri: Uri) {}
     fun onEnableLockScreen() {}
+    fun onScanned(uri: String) {}
 }
 
 /**
@@ -160,5 +164,12 @@ fun MainDialogHost(
             onDismiss = dismiss,
         )
         MainDialog.About -> AboutDialog(onDismiss = dismiss)
+        MainDialog.Scan -> ScanDialog(
+            onScanned = {
+                dismiss()
+                listener.onScanned(it)
+            },
+            onDismiss = dismiss,
+        )
     }
 }

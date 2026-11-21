@@ -48,6 +48,7 @@ zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" 
 nbvcxz = { group = "me.gosimple", name = "nbvcxz", version.ref = "nbvcxz" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTestRunner" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 mockito-android = { group = "org.mockito", name = "mockito-android", version.ref = "mockito" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
