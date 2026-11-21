@@ -105,8 +105,13 @@ These hold for every phase:
 
 ### Phase 3: Main screen
 
-- [ ] Extract `TokenRepository` from `main/Adapter` (add, delete, move, MRU sort, `getCode`,
-      restore, legacy `compat()`), with no UI change; `TokenAdapterTest` keeps passing
+- [x] Extract `TokenRepository` from `main/Adapter` (add, delete, move, MRU sort, `getCode`,
+      restore, legacy `compat()`), with no UI change; `TokenAdapterTest` keeps passing.
+      `data/TokenRepository.kt` is UUID-keyed and has no Android UI dependencies; `Adapter` maps
+      positions to UUIDs and keeps the code-expiry `Handler`. Covered by `TokenRepositoryTest`.
+      Fixed on the way: a failed legacy migration undid the wrong token (position 0 instead of
+      the one just added), and a failing `TokenPersistence` init crashed add/delete/restore
+      with an NPE instead of skipping the backup mirror
 - [ ] `MainViewModel`: token list, selection as a set of UUIDs (not positions), settings
       (auto-copy, sort by MRU)
 - [ ] Compose token grid: `LazyVerticalGrid` with stable UUID keys and item animations; token card
@@ -141,4 +146,6 @@ These hold for every phase:
 
 ## Status
 
-Phase 0 and 1 done. Phase 2 done on branch `compose/phase-2`. Next: Phase 3.
+Phases 0–2 done and merged into `master`. Phase 3 in progress on branch `compose/phase-3`:
+`TokenRepository` extracted; next is `MainViewModel` (which also moves restore/PBKDF2 off the
+main thread).

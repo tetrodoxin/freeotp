@@ -28,7 +28,7 @@ CI (`.github/workflows/build.yml`) runs the instrumented tests on emulators at A
 Secrets are never stored in plaintext. Three layers interact, and you need to know all of them before touching tokens, backup or restore:
 
 1. **AndroidKeyStore**: each token's HMAC secret is imported under the token's UUID alias, and code generation uses that non-extractable key. A `masterKey` alias holds an AES/GCM **encrypt-only** key.
-2. **`tokenStore` SharedPreferences** (`main/Adapter.java`): token metadata as Gson JSON keyed by UUID, plus a `tokenOrder` UUID list. `Adapter` is effectively the token repository, not just a RecyclerView adapter: it adds, deletes and reorders tokens, generates codes (`getCode`) and migrates legacy pre-2.0 tokens from the old `tokens` prefs (`compat()` / `Token.compat`).
+2. **`tokenStore` SharedPreferences** (`data/TokenRepository.kt`): token metadata as Gson JSON keyed by UUID, plus a `tokenOrder` UUID list. `TokenRepository` is UUID-keyed: it adds, deletes and reorders tokens, generates codes (`getCode`), restores backups and migrates legacy pre-2.0 tokens from the old `tokens` prefs (`compat()` / `Token.compat`). `main/Adapter` is now only the RecyclerView adapter over it (position → UUID).
 3. **`tokenBackup` SharedPreferences** (`TokenPersistence`): for each token, `<uuid>` → JSON `{key: EncryptedKey}` (the secret encrypted under the master key) and `<uuid>-token` → serialized token metadata, plus `masterKey` → a Gson-serialized `MasterKey`.
 
 `encryptor/`:
