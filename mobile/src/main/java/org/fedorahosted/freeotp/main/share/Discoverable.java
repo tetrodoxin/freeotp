@@ -27,18 +27,18 @@ import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
 
-class Discoverable {
-    interface Shareable {
-        interface ShareCallback {
+public class Discoverable {
+    public interface Shareable {
+        public interface ShareCallback {
             void onShareCompleted(boolean success);
         }
 
         void share(String token, ShareCallback shareCallback);
     }
 
-    interface DiscoveryCallback {
-        void onShareAppeared(Discoverable discoverable, Adapter.Item item, Shareable shareable);
-        void onShareDisappeared(Discoverable discoverable, Adapter.Item item);
+    public interface DiscoveryCallback {
+        void onShareAppeared(Discoverable discoverable, ShareTarget item, Shareable shareable);
+        void onShareDisappeared(Discoverable discoverable, ShareTarget item);
     }
 
     private Handler mHandler = new Handler(Looper.getMainLooper());
@@ -58,7 +58,7 @@ class Discoverable {
         mHandler.postDelayed(runnable, delayMillis);
     }
 
-    void appear(final Adapter.Item item, final Shareable shareable) {
+    void appear(final ShareTarget item, final Shareable shareable) {
         post(new Runnable() {
             @Override
             public void run() {
@@ -67,7 +67,7 @@ class Discoverable {
         });
     }
 
-    void disappear(final Adapter.Item item) {
+    void disappear(final ShareTarget item) {
         post(new Runnable() {
             @Override
             public void run() {
@@ -77,16 +77,16 @@ class Discoverable {
     }
 
     /* Determines whether or not this device supports this type of share. */
-    boolean supported() {
+    public boolean supported() {
         return true;
     }
 
     /* The permissions required to use this type of share. */
-    String[] permissions() {
+    public String[] permissions() {
         return new String[0];
     }
 
-    boolean permitted() {
+    public boolean permitted() {
         if (!supported())
             return false;
 
@@ -99,15 +99,15 @@ class Discoverable {
     }
 
     /* The intent to use with startActivityForResult() if enabled is required. */
-    Intent enablement() {
+    public Intent enablement() {
         return null;
     }
 
     /* Start discovery of sharables. */
-    void startDiscovery() {}
+    public void startDiscovery() {}
 
     /* Stop discovery of sharables. */
-    void stopDiscovery() {}
+    public void stopDiscovery() {}
 
-    boolean isDiscovering() { return true; }
+    public boolean isDiscovering() { return true; }
 }

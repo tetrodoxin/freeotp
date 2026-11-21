@@ -85,11 +85,23 @@ These hold for every phase:
 
 ### Phase 2: Dialogs and sharing
 
-- [ ] `EditTokenDialogFragment`, `RestoreDialogFragment`, `RestoreCancelDialogFragment` →
-      Compose dialogs (hosted in `ComposeView` until the main screen is migrated)
-- [ ] `ShareFragment` → `ModalBottomSheet`; `Discoverable`, `Clipboard` and `Jelling` stay as
-      non-UI logic
-- [ ] Replace Picasso with Coil
+- [x] `EditTokenDialogFragment`, `RestoreDialogFragment`, `RestoreCancelDialogFragment` →
+      Compose dialogs (`ui/dialogs/`). `MainDialogsViewModel` holds the open dialog and
+      `MainDialogHost` renders it in a `ComposeView` added to `main.Activity`, until the main
+      screen is migrated. Open dialogs now survive rotation; before, a recreated restore dialog
+      lost its listener and its buttons did nothing. The edit dialog got a Cancel button
+- [x] `ShareFragment` → `ModalBottomSheet` (`ui/share/ShareSheet.kt`); `Discoverable`,
+      `Clipboard` and `Jelling` stay as non-UI logic. `ShareTarget` replaces the RecyclerView
+      adapter items; the sheet renders immutable `ShareTargetUi` snapshots of them. The target
+      order no longer treats different titles as equal, and turning on Bluetooth is only asked
+      once per sheet instead of on every return to the app
+- [x] Replace Picasso with Coil 3 (`coil-network-okhttp`); the View-based token list loads
+      through `ui/image/TokenImages`. Token images given as `android.resource://…/drawable/<name>`
+      no longer load (Coil only takes the numeric resource ID form) and fall back to the issuer
+      icon; http(s) images are unaffected
+- The password text field is shared (`ui/components/PasswordField`)
+- Unchanged: restoring still runs PBKDF2 on the main thread (moves with `TokenRepository` in
+  Phase 3)
 
 ### Phase 3: Main screen
 
@@ -118,7 +130,7 @@ These hold for every phase:
 - [ ] Single activity with Navigation Compose (password → onboarding → main → manual add / scan);
       launcher and VIEW intent keep working
 - [ ] Remove layouts, view binding, `SelectableAdapter`, `GridLayoutItemDecoration`,
-      `SquareFrameLayout`, `SystemBarInsets`, Picasso and unused Material Components resources
+      `SquareFrameLayout`, `SystemBarInsets` and unused Material Components resources
 - [ ] Replace the screenshots in `screenshots/` (used by README.md) with the Material 3 UI
 
 ### Phase 6 (optional): Core to Kotlin
@@ -129,4 +141,4 @@ These hold for every phase:
 
 ## Status
 
-Phase 0 done. Phase 1 done on branch `compose/phase-1`. Next: Phase 2.
+Phase 0 and 1 done. Phase 2 done on branch `compose/phase-2`. Next: Phase 3.

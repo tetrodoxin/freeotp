@@ -27,17 +27,17 @@ import androidx.annotation.NonNull;
 
 import org.fedorahosted.freeotp.R;
 
-class Clipboard extends Discoverable {
+public class Clipboard extends Discoverable {
     private ClipboardManager mClipboardManager;
 
-    Clipboard(@NonNull Context context, @NonNull DiscoveryCallback discoveryCallback) {
+    public Clipboard(@NonNull Context context, @NonNull DiscoveryCallback discoveryCallback) {
         super(context, discoveryCallback);
 
         mClipboardManager = context.getSystemService(ClipboardManager.class);
         if (mClipboardManager == null)
             return;
 
-        Adapter.Item item = new Adapter.Item();
+        ShareTarget item = new ShareTarget();
         item.setImage(R.drawable.ic_copy);
         item.setTitle(mContext.getResources().getString(R.string.share_clipboard_copy_to));
         item.setSubtitle(mContext.getResources().getString(R.string.share_clipboard_clipboard));

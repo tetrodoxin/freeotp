@@ -56,7 +56,6 @@ import org.fedorahosted.freeotp.ManualAdd;
 import org.fedorahosted.freeotp.R;
 import org.fedorahosted.freeotp.Token;
 import org.fedorahosted.freeotp.TokenPersistence;
-import org.fedorahosted.freeotp.main.share.ShareFragment;
 import org.fedorahosted.freeotp.ui.dialogs.MainDialogListener;
 import org.fedorahosted.freeotp.ui.dialogs.MainDialogsViewModel;
 import org.fedorahosted.freeotp.utils.GridLayoutItemDecoration;
@@ -265,12 +264,7 @@ public class Activity extends AppCompatActivity
 
                 @Override
                 public void onShare(String code) {
-                    Bundle b = new Bundle();
-                    b.putString(ShareFragment.CODE_ID, code);
-
-                    ShareFragment sf = new ShareFragment();
-                    sf.setArguments(b);
-                    sf.show(getSupportFragmentManager(), sf.getTag());
+                    mDialogs.showShare(code);
                 }
             };
         } catch (GeneralSecurityException | IOException e) {

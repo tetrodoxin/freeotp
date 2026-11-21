@@ -59,7 +59,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressLint("DiscouragedPrivateApi")
-class Jelling extends Discoverable {
+public class Jelling extends Discoverable {
     private class GattCallback extends BluetoothGattCallback {
         Shareable.ShareCallback mShareCallback;
         boolean mRegistered = false;
@@ -250,7 +250,7 @@ class Jelling extends Discoverable {
             final BluetoothDevice dev = result.getDevice();
 
             if (!mDevices.containsKey(dev)) {
-                Adapter.Item item = new Adapter.Item();
+                ShareTarget item = new ShareTarget();
                 item.setTitle(mContext.getResources().getString(R.string.share_jelling_send_to));
                 item.setSubtitle(getAliasOrName(dev, result.getScanRecord()));
                 item.setImage(R.drawable.ic_bluetooth);
@@ -300,8 +300,8 @@ class Jelling extends Discoverable {
         }
     }
 
-    private final Map<BluetoothDevice, Adapter.Item> mDeviceItemMap = new ConcurrentHashMap<>();
-    private final Adapter.Item mBluetoothItem = new Adapter.Item();
+    private final Map<BluetoothDevice, ShareTarget> mDeviceItemMap = new ConcurrentHashMap<>();
+    private final ShareTarget mBluetoothItem = new ShareTarget();
     private BluetoothGatt mBluetoothGatt;
     private boolean mScanning = false;
 
@@ -319,7 +319,7 @@ class Jelling extends Discoverable {
     }
 
 
-    Jelling(@NonNull Context context, @NonNull DiscoveryCallback discoveryCallback) {
+    public Jelling(@NonNull Context context, @NonNull DiscoveryCallback discoveryCallback) {
         super(context, discoveryCallback);
 
         mBluetoothItem.setSubtitle(mContext.getResources().getString(R.string.share_jelling_bluetooth_devices));
@@ -400,7 +400,7 @@ class Jelling extends Discoverable {
     }
 
     @Override
-    boolean isDiscovering() {
+    public boolean isDiscovering() {
         return mScanning;
     }
 }

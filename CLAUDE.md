@@ -43,10 +43,10 @@ Backup paths (see `BACKUP.md`): Android Auto Backup of the `tokenBackup` prefs v
 ### App flow
 
 - `PasswordActivity` (Kotlin/Compose, `ui/password/`) is the launcher. It provisions the master password on first run (strength checked with nbvcxz in `PasswordViewModel`) and then hands off to `main.Activity`.
-- `main.Activity` handles `otpauth://totp|hotp` VIEW intents, the toolbar menus (backup, restore, scan, manual add) and restore prompts. Dialogs live in `main/*DialogFragment`. QR scanning uses CameraX and ZXing.
+- `main.Activity` handles `otpauth://totp|hotp` VIEW intents, the toolbar menus (backup, restore, scan, manual add) and restore prompts. Its dialogs are Compose (`ui/dialogs/`, shown through `MainDialogsViewModel`); the remaining simple alerts are `AlertDialog`s. QR scanning uses CameraX and ZXing.
 - `OnBoardingActivity` (Kotlin/Compose, `ui/onboarding/`) shows the first-run introduction; completion is stored as `onBoardingComplete` in the default shared preferences.
 - `ManualAdd` (Kotlin/Compose, `ui/manualadd/`) returns the entered token as an `otpauth://` URI result; `ManualAddForm.toUri()` builds it.
-- `main/share/`: sharing a code. `ShareFragment` iterates over `Discoverable` implementations (`Clipboard`, and `Jelling`, which shares over Bluetooth LE GATT).
+- Sharing a code: the Compose `ShareSheet` (`ui/share/`) lists the `ShareTarget`s of the `Discoverable` implementations in `main/share/` (`Clipboard`, and `Jelling`, which shares over Bluetooth LE GATT).
 
 ### Token model
 

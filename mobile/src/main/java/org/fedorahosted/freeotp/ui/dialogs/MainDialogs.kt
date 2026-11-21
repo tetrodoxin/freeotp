@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import org.fedorahosted.freeotp.ui.share.ShareSheet
 import org.fedorahosted.freeotp.ui.theme.FreeOTPTheme
 
 /** The dialog currently shown over the (still View-based) token list, if any. */
@@ -29,6 +30,8 @@ sealed interface MainDialog {
     data class Restore(val failures: Int = 0) : MainDialog
 
     data object RestoreCancel : MainDialog
+
+    data class Share(val code: String) : MainDialog
 }
 
 /** Callbacks of the main screen's dialogs, implemented by `main.Activity`. */
@@ -55,6 +58,10 @@ class MainDialogsViewModel : ViewModel() {
 
     fun showRestoreCancel() {
         _dialog.value = MainDialog.RestoreCancel
+    }
+
+    fun showShare(code: String) {
+        _dialog.value = MainDialog.Share(code)
     }
 
     /** The restore password was wrong: keep the dialog open and show the error. */
@@ -107,5 +114,6 @@ fun MainDialogHost(viewModel: MainDialogsViewModel, listener: MainDialogListener
             onGoBack = viewModel::showRestore,
             onProceed = viewModel::dismiss,
         )
+        is MainDialog.Share -> ShareSheet(code = d.code, onDismiss = viewModel::dismiss)
     }
 }
