@@ -24,10 +24,3 @@
 # nbvcxz loads its dictionaries from jar resources relative to its classes.
 -keep class me.gosimple.nbvcxz.** { *; }
 -dontwarn me.gosimple.nbvcxz.**
-
-# OkHttp 3 (pulled in by Picasso) references optional platform classes that are not on the
-# classpath. Picasso is replaced by Coil in Phase 2 of MIGRATION.md.
--dontwarn javax.annotation.**
--dontwarn org.conscrypt.**
--dontwarn org.bouncycastle.**
--dontwarn org.openjsse.**

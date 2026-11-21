@@ -29,7 +29,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
-import com.squareup.picasso.Picasso;
+import org.fedorahosted.freeotp.ui.image.TokenImages;
 
 import org.fedorahosted.freeotp.databinding.FragmentEditBinding;
 
@@ -75,7 +75,7 @@ public class EditTokenDialogFragment extends DialogFragment {
             if (imageUrl == null) {
                 mBinding.image.setImageResource(getArguments().getInt("image_id"));
             } else {
-                Picasso.get().load(imageUrl).error(imageId).into(mBinding.image);
+                TokenImages.load(mBinding.image, imageUrl, imageId);
             }
         }
 

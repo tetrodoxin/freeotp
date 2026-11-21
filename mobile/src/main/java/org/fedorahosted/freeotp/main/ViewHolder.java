@@ -36,7 +36,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.squareup.picasso.Picasso;
+import org.fedorahosted.freeotp.ui.image.TokenImages;
 
 import org.fedorahosted.freeotp.Code;
 import org.fedorahosted.freeotp.R;
@@ -241,8 +241,8 @@ class ViewHolder extends RecyclerView.ViewHolder {
     void reset() {
         mHandler.removeCallbacksAndMessages(null);
         mCountdown.cancel();
-        Picasso.get().cancelRequest(mImage);
-        Picasso.get().cancelRequest(mImageActive);
+        TokenImages.cancel(mImage);
+        TokenImages.cancel(mImageActive);
     }
 
     void bind(Token token, int color, int image_id, String image_url, Code code, boolean selected, Token.Type type) {
@@ -260,8 +260,8 @@ class ViewHolder extends RecyclerView.ViewHolder {
             mImage.setImageResource(image_id);
             mImageActive.setImageResource(image_id);
         } else {
-            Picasso.get().load(image_url).error(image_id).into(mImage);
-            Picasso.get().load(image_url).error(image_id).into(mImageActive);
+            TokenImages.load(mImage, image_url, image_id);
+            TokenImages.load(mImageActive, image_url, image_id);
         }
 
         setSelected(selected);

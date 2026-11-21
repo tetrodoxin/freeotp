@@ -9,7 +9,7 @@ appcompat = "1.7.1"
 constraintlayout = "2.2.1"
 material = "1.12.0"
 camerax = "1.5.1"
-picasso = "2.71828"
+coil = "3.3.0"
 commonsCodec = "1.15"
 gson = "2.10.1"
 zxing = "3.5.4"
@@ -38,7 +38,9 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-picasso = { group = "com.squareup.picasso", name = "picasso", version.ref = "picasso" }
+coil = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commonsCodec" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }

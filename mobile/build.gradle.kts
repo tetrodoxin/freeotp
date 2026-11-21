@@ -81,7 +81,9 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
 
-    implementation(libs.picasso)
+    implementation(libs.coil)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.commons.codec)
     implementation(libs.gson)
     implementation(libs.zxing.core)
