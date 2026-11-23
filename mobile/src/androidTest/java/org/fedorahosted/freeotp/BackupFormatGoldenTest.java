@@ -22,7 +22,6 @@ import android.net.Uri;
 import android.util.Pair;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.google.gson.Gson;
@@ -167,7 +166,6 @@ public class BackupFormatGoldenTest {
     // The fixture's master key is wrapped with PBKDF2-HmacSHA512, which Android only has from API 26
     // on; below that, backups made on newer devices can't be decrypted (see MIGRATION.md).
     @Test
-    @SdkSuppress(minSdkVersion = 26)
     public void masterKeyJsonDecryptsWithPassword() throws Exception {
         MasterKey mk = new Gson().fromJson(mPrefs.getString(MASTER), MasterKey.class);
         assertArrayEquals(mMasterKey.getEncoded(), mk.decrypt(PASSWORD).getEncoded());
@@ -176,7 +174,6 @@ public class BackupFormatGoldenTest {
     // The fixture's master key is wrapped with PBKDF2-HmacSHA512, which Android only has from API 26
     // on; below that, backups made on newer devices can't be decrypted (see MIGRATION.md).
     @Test
-    @SdkSuppress(minSdkVersion = 26)
     public void masterKeyJsonRejectsWrongPassword() throws Exception {
         MasterKey mk = new Gson().fromJson(mPrefs.getString(MASTER), MasterKey.class);
         try {
@@ -252,7 +249,6 @@ public class BackupFormatGoldenTest {
     // The fixture's master key is wrapped with PBKDF2-HmacSHA512, which Android only has from API 26
     // on; below that, backups made on newer devices can't be decrypted (see MIGRATION.md).
     @Test
-    @SdkSuppress(minSdkVersion = 26)
     public void exportedBackupFileRestores() throws Exception {
         Context ctx = contextWithResolver();
         File file = new File(InstrumentationRegistry.getInstrumentation().getTargetContext()
@@ -291,7 +287,6 @@ public class BackupFormatGoldenTest {
     // The fixture's master key is wrapped with PBKDF2-HmacSHA512, which Android only has from API 26
     // on; below that, backups made on newer devices can't be decrypted (see MIGRATION.md).
     @Test
-    @SdkSuppress(minSdkVersion = 26)
     public void restoredTokensGenerateCodesThroughRepository() throws Exception {
         Context ctx = contextWithResolver();
         SharedPreferences.Editor ed = ctx.getSharedPreferences("tokenBackup", 0).edit();

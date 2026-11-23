@@ -19,7 +19,7 @@ FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a sin
 ./gradlew connectedAndroidTest -PtestMinified   # same tests against the R8-minified release build
 ```
 
-CI (`.github/workflows/build.yml`) runs the instrumented tests on emulators at API 24, 29 and 35, so changes must work across that range (minSdk 23).
+CI (`.github/workflows/build.yml`) runs the instrumented tests on emulators at API 26, 29 and 35, so changes must work across that range (minSdk 26).
 
 ## Architecture
 

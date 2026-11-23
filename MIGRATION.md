@@ -2,7 +2,7 @@
 
 This document tracks the migration of the app from Java + Views (view binding) to Kotlin + Jetpack
 Compose. The migration happens in phases. Each phase leaves the app shippable, and CI (instrumented
-tests on API 24, 29 and 35) stays green throughout.
+tests on API 26, 29 and 35) stays green throughout.
 
 ## Decisions
 
@@ -178,8 +178,7 @@ These hold for every phase:
       launcher and VIEW intent keep working. `main.Activity` hosts a `NavHost` with string
       routes (no serialization plugin for four routes); scan stays a dialog of the token list.
       The launcher is an `<activity-alias>` named `.PasswordActivity`, so home-screen shortcuts
-      to the old launcher component keep working. Navigation is pinned to 2.9.x: 2.10 needs
-      minSdk 24
+      to the old launcher component keep working
 - [x] Remove layouts, view binding, `SelectableAdapter`, `GridLayoutItemDecoration`,
       `SystemBarInsets` and unused Material Components resources. Also gone: `Adapter`,
       `ViewHolder`, `UserNotifier`, `TokenImages`, the AppCompat, Material Components and
@@ -201,17 +200,16 @@ These hold for every phase:
 - [ ] High risk, only behind the golden tests: `Token`, `encryptor/*`, `TokenPersistence`, with
       identical field names and `@SerializedName`
 
-## Known issues
+## After the migration
 
-- **Backups made on API 26+ can't be restored on API 23–25.** `MasterKey` prefers
-  PBKDF2-HmacSHA512, which Android only provides from API 26 on, so on older devices the
-  master key of such a backup can't be derived and restore reports a wrong password. This
-  predates the migration. `BackupFormatGoldenTest` skips the password-dependent tests there
-  (`@SdkSuppress(minSdkVersion = 26)`). A fix would derive PBKDF2-HmacSHA512 in code on top of
-  `HmacSHA512` (available on all supported versions) — a change to the crypto core, behind the
-  golden tests
+- **minSdk raised from 23 to 26 (Android 8).** On API 23–25, backups made on API 26+ couldn't be
+  restored: `MasterKey` prefers PBKDF2-HmacSHA512, which Android only provides from API 26 on, so
+  the master key couldn't be derived and restore reported a wrong password. Raising minSdk fixes
+  that without touching the crypto core. It also allowed Navigation 2.10 (needs minSdk 24). The
+  SHA1 fallback in `MasterKey` stays, so old backups remain readable. CI's oldest emulator moved
+  from API 24 to 26
 
 ## Status
 
-Phases 0–4 done and merged into `master`. Phase 5 done on branch `compose/phase-5`. The migration
-is complete; Phase 6 (core to Kotlin) is optional.
+Phases 0–5 done and merged into `master`. The migration is complete; Phase 6 (core to Kotlin) is
+optional.

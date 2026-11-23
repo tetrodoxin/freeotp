@@ -238,10 +238,5 @@ private fun vibrate(context: Context) {
         @Suppress("DEPRECATION")
         context.getSystemService<Vibrator>()
     } ?: return
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE))
-    } else {
-        @Suppress("DEPRECATION")
-        vibrator.vibrate(250)
-    }
+    vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE))
 }
