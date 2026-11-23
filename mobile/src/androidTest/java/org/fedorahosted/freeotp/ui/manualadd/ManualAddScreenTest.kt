@@ -2,6 +2,8 @@ package org.fedorahosted.freeotp.ui.manualadd
 
 import android.net.Uri
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -43,6 +45,17 @@ class ManualAddScreenTest {
         compose.mainClock.autoAdvance = true
     }
 
+    /*
+     * The field is scrolled into view first (the keyboard may cover it), and the menu opens in a
+     * popup window, which a slow emulator may not have attached by the time the click returns.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    private fun choose(tag: String, option: String) {
+        compose.onNodeWithTag(tag).performScrollTo().performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("$tag:$option"), timeoutMillis = 5_000)
+        compose.onNodeWithTag("$tag:$option").performClick()
+    }
+
     @Before
     fun setUp() {
         compose.setContent {
@@ -69,12 +82,10 @@ class ManualAddScreenTest {
         compose.onNodeWithTag("account").performTextReplacement("jdoe")
         compose.onNodeWithTag("issuer").performTextReplacement("Example")
         compose.onNodeWithTag("secret").performTextReplacement("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ")
-        compose.onNodeWithText(string(R.string.manual_button_totp_text)).performClick()
-        compose.onNodeWithText(string(R.string.manual_button_digits_eight)).performClick()
-        compose.onNodeWithTag("algorithm").performClick()
-        compose.onNodeWithTag("algorithm:SHA1").performClick()
-        compose.onNodeWithTag("interval").performClick()
-        compose.onNodeWithTag("interval:60").performClick()
+        compose.onNodeWithText(string(R.string.manual_button_totp_text)).performScrollTo().performClick()
+        compose.onNodeWithText(string(R.string.manual_button_digits_eight)).performScrollTo().performClick()
+        choose("algorithm", "SHA1")
+        choose("interval", "60")
         compose.onNodeWithTag("add").performScrollTo().performClick()
         compose.waitForIdle()
 

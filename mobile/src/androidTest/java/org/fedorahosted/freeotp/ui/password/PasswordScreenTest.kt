@@ -35,7 +35,7 @@ class PasswordScreenTest {
     private lateinit var model: PasswordViewModel
 
     private fun complete(password: String, strength: Strength) {
-        compose.waitUntil { pending.containsKey(password) }
+        compose.waitUntil(timeoutMillis = 10_000) { pending.containsKey(password) }
         pending.getValue(password).complete(strength)
         compose.waitForIdle()
     }
@@ -103,7 +103,8 @@ class PasswordScreenTest {
         compose.onNodeWithTag("confirm").performTextReplacement("Correct-Horse-1")
         compose.onNodeWithTag("done").performClick()
 
-        compose.waitUntil { model.state.value.provisioned }
+        // Provisioning runs on a background dispatcher, which the test clock doesn't wait for.
+        compose.waitUntil(timeoutMillis = 10_000) { model.state.value.provisioned }
         assertEquals(listOf("Correct-Horse-1"), provisioned)
         assertTrue(!model.state.value.doneEnabled)
     }
