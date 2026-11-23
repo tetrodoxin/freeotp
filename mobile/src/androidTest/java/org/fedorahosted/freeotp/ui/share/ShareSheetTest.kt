@@ -35,14 +35,16 @@ class ShareSheetTest {
         compose.onNodeWithTag("share_target:$clipboard").performClick()
         compose.waitUntil(5_000) { dismissed }
 
-        val clip = context.getSystemService(ClipboardManager::class.java).primaryClip
+        // On the UI thread: before API 28, ClipboardManager needs a Looper on the creating thread.
+        val clip = compose.runOnIdle { context.getSystemService(ClipboardManager::class.java).primaryClip }
         assertEquals("123456", clip?.getItemAt(0)?.text?.toString())
     }
 
     /* Discoverables change their targets in place, e.g. "Scan for…" becomes "Scanning for…". */
     @Test
     fun targetChangesAreShown() {
-        val controller = ShareController(context, "123456")
+        // On the UI thread, like in the app: its Clipboard target creates a ClipboardManager.
+        val controller = compose.runOnIdle { ShareController(context, "123456") }
         val target = ShareTarget().apply {
             title = "Test target"
             subtitle = "Devices"

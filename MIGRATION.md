@@ -201,6 +201,16 @@ These hold for every phase:
 - [ ] High risk, only behind the golden tests: `Token`, `encryptor/*`, `TokenPersistence`, with
       identical field names and `@SerializedName`
 
+## Known issues
+
+- **Backups made on API 26+ can't be restored on API 23–25.** `MasterKey` prefers
+  PBKDF2-HmacSHA512, which Android only provides from API 26 on, so on older devices the
+  master key of such a backup can't be derived and restore reports a wrong password. This
+  predates the migration. `BackupFormatGoldenTest` skips the password-dependent tests there
+  (`@SdkSuppress(minSdkVersion = 26)`). A fix would derive PBKDF2-HmacSHA512 in code on top of
+  `HmacSHA512` (available on all supported versions) — a change to the crypto core, behind the
+  golden tests
+
 ## Status
 
 Phases 0–4 done and merged into `master`. Phase 5 done on branch `compose/phase-5`. The migration

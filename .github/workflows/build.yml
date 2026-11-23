@@ -58,6 +58,15 @@ jobs:
         disable-animations: true
         disable-spellchecker: true
 
+    - name: Upload test report
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report-api-${{ matrix.api-level }}
+        path: |
+          mobile/build/reports/androidTests/
+          mobile/build/outputs/androidTest-results/
+
   # Checks that the R8 keep rules preserve the backup format: BackupFormatGoldenTest against the
   # minified release build (see MIGRATION.md). One API level is enough; dependency or AGP updates
   # can change R8 behavior, so this runs on every PR.
@@ -91,3 +100,12 @@ jobs:
         script: ./gradlew connectedAndroidTest -PtestMinified -Pandroid.testInstrumentationRunnerArguments.class=org.fedorahosted.freeotp.BackupFormatGoldenTest --stacktrace
         disable-animations: true
         disable-spellchecker: true
+
+    - name: Upload test report
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report-minified
+        path: |
+          mobile/build/reports/androidTests/
+          mobile/build/outputs/androidTest-results/
