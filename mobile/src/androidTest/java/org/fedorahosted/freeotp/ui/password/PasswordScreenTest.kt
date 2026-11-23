@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -101,7 +102,9 @@ class PasswordScreenTest {
         compose.onNodeWithTag("password").performTextReplacement("Correct-Horse-1")
         complete("Correct-Horse-1", Strength(safe = true, warning = null))
         compose.onNodeWithTag("confirm").performTextReplacement("Correct-Horse-1")
-        compose.onNodeWithTag("done").performClick()
+        // The keyboard is open after typing, and on a small screen it can cover the button.
+        compose.onNodeWithTag("done").performScrollTo().assertIsEnabled().performClick()
+        assertTrue("Done click was not delivered", model.state.value.let { it.provisioning || it.provisioned })
 
         // Provisioning runs on a background dispatcher, which the test clock doesn't wait for.
         compose.waitUntil(timeoutMillis = 10_000) { model.state.value.provisioned }
