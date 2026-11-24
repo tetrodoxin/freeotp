@@ -1,5 +1,6 @@
 package org.fedorahosted.freeotp
 
+import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.fedorahosted.freeotp.data.TokenRepository
 import org.junit.After
@@ -26,7 +27,7 @@ class TokenRepositoryTest {
 
     @Before
     fun setUp() {
-        context = Context()
+        context = MemoryContext()
         repository = TokenRepository(context)
     }
 

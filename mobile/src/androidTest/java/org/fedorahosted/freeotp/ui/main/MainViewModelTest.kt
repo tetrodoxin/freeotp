@@ -1,5 +1,6 @@
 package org.fedorahosted.freeotp.ui.main
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,7 +15,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.fedorahosted.freeotp.Context
+import org.fedorahosted.freeotp.MemoryContext
 import org.fedorahosted.freeotp.TokenPersistence
 import org.fedorahosted.freeotp.data.TokenRepository
 import org.fedorahosted.freeotp.utils.Time
@@ -66,7 +67,7 @@ class MainViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        context = Context()
+        context = MemoryContext()
         Time.INSTANCE = object : Time() {
             override fun current() = START + dispatcher.scheduler.currentTime
         }

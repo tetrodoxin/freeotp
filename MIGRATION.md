@@ -194,11 +194,16 @@ These hold for every phase:
     returns to the list, as the old `singleTask` activity did
   - `FLAG_SECURE` now covers every screen, including onboarding and the password screen
 
-### Phase 6 (optional): Core to Kotlin
+### Phase 6: Helpers and tests to Kotlin
 
-- [ ] Low risk: `Code`, `utils/Time`, `TokenIcon`
-- [ ] High risk, only behind the golden tests: `Token`, `encryptor/*`, `TokenPersistence`, with
-      identical field names and `@SerializedName`
+- [x] Low risk: `Code`, `utils/Time`, `TokenIcon`, and `Discoverable` and `Clipboard` from
+      `main/share/`. Java callers keep the same API (`Time.INSTANCE`, `Code.Factory`, `getCode()`)
+- [x] All tests to Kotlin. The 567-line fake `Context` became `MemoryContext`, a `ContextWrapper`
+      with in-memory shared preferences; Mockito is gone. The golden fixtures are unchanged
+- Decided not to convert: `Token`, `encryptor/*`, `TokenPersistence` and `TokenBackupAgent` define
+  what is stored and backed up, so they stay Java as a frozen core; `Jelling` (Bluetooth sharing)
+  can't be verified on the emulator and gains nothing from it. Converting the persisted classes
+  later would need identical field names and types (Gson reflection), guarded by the golden tests
 
 ## After the migration
 
@@ -211,5 +216,4 @@ These hold for every phase:
 
 ## Status
 
-Phases 0–5 done and merged into `master`. The migration is complete; Phase 6 (core to Kotlin) is
-optional.
+Phases 0–6 done and merged into `master`. The migration is complete.

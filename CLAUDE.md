@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a single Gradle module (`:mobile`), package `org.fedorahosted.freeotp`: a single-activity Jetpack Compose (Material 3) UI in Kotlin over a crypto/persistence core that is still Java (see the migration section below). The build uses Gradle 9 / AGP 9 (built-in Kotlin) with Kotlin DSL scripts and a version catalog in `gradle/libs.versions.toml`.
+FreeOTP is an Android HOTP/TOTP (RFC 4226 / RFC 6238) authenticator. It is a single Gradle module (`:mobile`), package `org.fedorahosted.freeotp`: a single-activity Jetpack Compose (Material 3) app in Kotlin. Only the persisted crypto/persistence core (`Token`, `encryptor/`, `TokenPersistence`, `TokenBackupAgent`) and the Bluetooth share `Jelling` stay Java on purpose (see the migration section below). The build uses Gradle 9 / AGP 9 (built-in Kotlin) with Kotlin DSL scripts and a version catalog in `gradle/libs.versions.toml`.
 
 ## Commands
 
@@ -55,7 +55,7 @@ Backup paths (see `BACKUP.md`): Android Auto Backup of the `tokenBackup` prefs v
 
 ### Tests
 
-The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Context.java` and `MemorySharedPreferences.java` provide a fake Context backed by in-memory SharedPreferences, so `TokenRepository`, `MainViewModel` and `TokenPersistence` can be tested without touching app data.
+The instrumented tests run against the real AndroidKeyStore. `androidTest/.../MemoryContext.kt` wraps the app's context with in-memory SharedPreferences (`MemorySharedPreferences.kt`, also through `applicationContext`), so `TokenRepository`, `MainViewModel` and `TokenPersistence` can be tested without touching app data. `BackupFormatGoldenTest` pins the backup format (see below).
 
 ## Conventions
 
@@ -68,6 +68,6 @@ The instrumented tests run against the real AndroidKeyStore. `androidTest/.../Co
 
 ## Migration to Kotlin + Compose
 
-The app was migrated to Kotlin and Jetpack Compose (Material 3) in phases; `MIGRATION.md` holds the decisions, guardrails and the checklist (Phase 6, converting the Java core, is optional). Compose screens live in `ui/<screen>/`, with Compose UI tests in the matching `androidTest` package (which `-PtestMinified` skips). Two rules matter most:
+The app was migrated to Kotlin and Jetpack Compose (Material 3) in phases; `MIGRATION.md` holds the decisions, guardrails and the checklist (Phase 6 converted everything except the persisted core and `Jelling`, which stay Java on purpose). Compose screens live in `ui/<screen>/`, with Compose UI tests in the matching `androidTest` package (which `-PtestMinified` skips). Two rules matter most:
 - Never change field names or types of the Gson-persisted classes (`Token`, `MasterKey`, `EncryptedKey`). `BackupFormatGoldenTest` guards the backup format: never regenerate its fixtures to make it pass. After touching these classes or `proguard-rules.pro`, also run the tests with `-PtestMinified`.
 - UI code is Kotlin + Compose; don't add XML layouts, view binding or Java UI classes.
