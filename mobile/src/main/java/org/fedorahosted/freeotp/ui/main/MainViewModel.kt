@@ -66,9 +66,9 @@ fun interface TokenAppearance {
                 label = token.label,
                 type = token.type,
                 locked = token.lock,
-                imageUrl = icon.mImage.second?.takeIf { it.isNotEmpty() },
-                imageRes = icon.mImage.first,
-                color = icon.mColor,
+                imageUrl = icon.imageUrl?.takeIf { it.isNotEmpty() },
+                imageRes = icon.imageRes,
+                color = icon.color,
             )
         }
     }

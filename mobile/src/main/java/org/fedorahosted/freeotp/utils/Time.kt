@@ -18,12 +18,14 @@
  * limitations under the License.
  */
 
-package org.fedorahosted.freeotp.utils;
+package org.fedorahosted.freeotp.utils
 
-public class Time {
-    public static Time INSTANCE = new Time();
+/** The clock used for codes. Tests replace [INSTANCE] to control TOTP time. */
+open class Time {
+    open fun current(): Long = System.currentTimeMillis()
 
-    public long current() {
-        return System.currentTimeMillis();
+    companion object {
+        @JvmField
+        var INSTANCE = Time()
     }
 }
